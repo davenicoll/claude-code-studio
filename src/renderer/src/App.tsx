@@ -9,6 +9,7 @@ import { BroadcastModal } from './components/BroadcastModal'
 import { CreateAgentDialog } from './components/CreateAgentDialog'
 import { ToastContainer, showToast } from './components/ToastContainer'
 import { QuickSearch } from './components/QuickSearch'
+import { WelcomeScreen } from './components/WelcomeScreen'
 
 export function App(): JSX.Element {
   const {
@@ -129,11 +130,15 @@ export function App(): JSX.Element {
       {showDashboard && <Dashboard />}
 
       <div className="flex flex-1 overflow-hidden">
-        <AgentList />
-
-        <ChatArea />
-
-        {showRightPane && <ContextPane />}
+        {agents.length === 0 ? (
+          <WelcomeScreen onCreateAgent={() => setShowCreateDialog(true)} />
+        ) : (
+          <>
+            <AgentList />
+            <ChatArea />
+            {showRightPane && <ContextPane />}
+          </>
+        )}
       </div>
 
       <BroadcastModal />

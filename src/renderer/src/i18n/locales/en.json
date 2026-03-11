@@ -104,6 +104,27 @@
       "toolExec": "Tool"
     }
   },
+  "welcome": {
+    "description": "Manage your Claude Code sessions like a team. Create agents, assign them to projects, and chat with them individually or broadcast to your entire team.",
+    "shortcuts": {
+      "newAgent": "New Agent",
+      "search": "Quick Search",
+      "dashboard": "Dashboard",
+      "broadcast": "Broadcast"
+    }
+  },
+  "dailyReport": {
+    "title": "Daily Report",
+    "date": "Date",
+    "teamSummary": "Team Summary",
+    "agentDetails": "Agent Details",
+    "totalAgents": "Total Agents",
+    "completedTasks": "Completed Tasks",
+    "errorCount": "Errors",
+    "noActivity": "No activity today",
+    "copyMarkdown": "Copy as Markdown",
+    "copied": "Copied!"
+  },
   "settings": {
     "title": "Settings",
     "language": "Language",

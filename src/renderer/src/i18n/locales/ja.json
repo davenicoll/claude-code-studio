@@ -104,6 +104,27 @@
       "toolExec": "ツール"
     }
   },
+  "welcome": {
+    "description": "Claude Codeセッションをチームのように管理。エージェントを作成し、プロジェクトに配置して、個別チャットやチーム一括指示が可能です。",
+    "shortcuts": {
+      "newAgent": "新規エージェント",
+      "search": "クイック検索",
+      "dashboard": "ダッシュボード",
+      "broadcast": "ブロードキャスト"
+    }
+  },
+  "dailyReport": {
+    "title": "日報",
+    "date": "日付",
+    "teamSummary": "チームサマリー",
+    "agentDetails": "エージェント詳細",
+    "totalAgents": "総エージェント数",
+    "completedTasks": "完了タスク",
+    "errorCount": "エラー数",
+    "noActivity": "本日のアクティビティはありません",
+    "copyMarkdown": "Markdownでコピー",
+    "copied": "コピーしました！"
+  },
   "settings": {
     "title": "設定",
     "language": "言語",
