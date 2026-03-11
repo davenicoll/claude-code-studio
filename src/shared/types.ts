@@ -108,7 +108,9 @@ export interface CreateAgentParams {
 }
 
 export interface TeamStats {
+  total: number
   active: number
+  thinking: number
   awaiting: number
   error: number
   completedToday: number

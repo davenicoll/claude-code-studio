@@ -16,7 +16,8 @@ import {
   Copy,
   Pin,
   PinOff,
-  Download
+  Download,
+  ArrowUpDown
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { getStatusDot, getInitials } from '../lib/status'
@@ -48,7 +49,15 @@ export function AgentList(): JSX.Element {
   const [showCreate, setShowCreate] = useState(false)
   const [createForProject, setCreateForProject] = useState<string | null>(null)
   const [inboxExpanded, setInboxExpanded] = useState(false)
-  const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set())
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'updated'>('updated')
+  const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('collapsedProjects')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
   const [contextMenu, setContextMenu] = useState<{ agentId: string; x: number; y: number } | null>(null)
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const [workspaceColors, setWorkspaceColors] = useState<Record<string, string>>({})
@@ -81,7 +90,19 @@ export function AgentList(): JSX.Element {
       active = active.filter((a) => a.workspaceId === activeWorkspaceId)
     }
     if (!search) return active
-    const q = search.toLowerCase()
+    const q = search.toLowerCase().trim()
+    // Support "status:xxx" filter syntax
+    const statusMatch = q.match(/^status:(\w+)$/)
+    if (statusMatch) {
+      const statusFilter = statusMatch[1]
+      return active.filter((a) => a.status.includes(statusFilter))
+    }
+    // Support "role:xxx" filter syntax
+    const roleMatch = q.match(/^role:(.+)$/)
+    if (roleMatch) {
+      const roleFilter = roleMatch[1]
+      return active.filter((a) => a.roleLabel?.toLowerCase().includes(roleFilter) ?? false)
+    }
     return active.filter(
       (a) =>
         a.name.toLowerCase().includes(q) ||
@@ -90,7 +111,7 @@ export function AgentList(): JSX.Element {
     )
   }, [agents, search, activeWorkspaceId])
 
-  // Group by project
+  // Group by project with sort
   const projectGroups = useMemo(() => {
     const map = new Map<string, Agent[]>()
     for (const agent of filteredAgents) {
@@ -100,10 +121,19 @@ export function AgentList(): JSX.Element {
     }
     const groups: ProjectGroup[] = []
     for (const [projectName, groupAgents] of map) {
-      groups.push({ projectName, agents: groupAgents })
+      // Sort agents within each group
+      const sorted = [...groupAgents].sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name)
+        if (sortBy === 'status') return a.status.localeCompare(b.status)
+        // 'updated' — newest first
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      })
+      // Pinned agents always come first
+      sorted.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+      groups.push({ projectName, agents: sorted })
     }
     return groups.sort((a, b) => a.projectName.localeCompare(b.projectName))
-  }, [filteredAgents])
+  }, [filteredAgents, sortBy])
 
   const toggleProject = (name: string): void => {
     setCollapsedProjects((prev) => {
@@ -113,6 +143,7 @@ export function AgentList(): JSX.Element {
       } else {
         next.add(name)
       }
+      localStorage.setItem('collapsedProjects', JSON.stringify([...next]))
       return next
     })
   }
@@ -230,16 +261,25 @@ export function AgentList(): JSX.Element {
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Agents
           </span>
-          <button
-            onClick={() => {
-              setCreateForProject(null)
-              setShowCreate(true)
-            }}
-            className="p-1 rounded hover:bg-accent text-muted-foreground transition-colors"
-            title={t('agent.new')}
-          >
-            <Plus size={16} />
-          </button>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => setSortBy((v) => v === 'updated' ? 'name' : v === 'name' ? 'status' : 'updated')}
+              className="p-1 rounded hover:bg-accent text-muted-foreground transition-colors"
+              title={`Sort: ${sortBy}`}
+            >
+              <ArrowUpDown size={14} />
+            </button>
+            <button
+              onClick={() => {
+                setCreateForProject(null)
+                setShowCreate(true)
+              }}
+              className="p-1 rounded hover:bg-accent text-muted-foreground transition-colors"
+              title={t('agent.new')}
+            >
+              <Plus size={16} />
+            </button>
+          </div>
         </div>
         <div className="relative">
           <Search

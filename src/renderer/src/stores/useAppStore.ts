@@ -79,7 +79,7 @@ export const useAppStore = create<AppState>((set) => ({
     })),
 
   // Team stats
-  teamStats: { active: 0, awaiting: 0, error: 0, completedToday: 0 },
+  teamStats: { total: 0, active: 0, thinking: 0, awaiting: 0, error: 0, completedToday: 0 },
   setTeamStats: (stats) => set({ teamStats: stats }),
 
   // UI state

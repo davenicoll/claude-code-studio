@@ -254,7 +254,9 @@ export class Database {
       (a) => a.status === 'idle' && a.updatedAt.startsWith(today)
     ).length
     return {
+      total: agents.length,
       active: agents.filter((a) => ['active', 'thinking', 'tool_running'].includes(a.status)).length,
+      thinking: agents.filter((a) => a.status === 'thinking' || a.status === 'tool_running').length,
       awaiting: agents.filter((a) => a.status === 'awaiting').length,
       error: agents.filter((a) => a.status === 'error').length,
       completedToday

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import {
   Users, AlertCircle, XCircle, CheckCircle2, FileText,
-  Network, BarChart3, Columns3, Plus, X, HardDrive
+  Network, BarChart3, Columns3, Plus, X, HardDrive, Brain
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { ActivityLog } from './ActivityLog'
@@ -90,12 +90,19 @@ export function Dashboard({ onOpenScanner }: DashboardProps): JSX.Element {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-5 gap-3">
         <div className="bg-secondary rounded-lg p-3 flex items-center gap-3">
           <Users size={20} className="text-green-600 dark:text-green-500" />
           <div>
             <div className="text-2xl font-bold">{teamStats.active}</div>
             <div className="text-xs text-muted-foreground">{t('dashboard.active')}</div>
+          </div>
+        </div>
+        <div className="bg-secondary rounded-lg p-3 flex items-center gap-3">
+          <Brain size={20} className="text-purple-600 dark:text-purple-500" />
+          <div>
+            <div className="text-2xl font-bold">{teamStats.thinking}</div>
+            <div className="text-xs text-muted-foreground">{t('dashboard.thinking', 'Thinking')}</div>
           </div>
         </div>
         <div className="bg-secondary rounded-lg p-3 flex items-center gap-3">
