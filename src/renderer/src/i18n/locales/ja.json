@@ -27,7 +27,8 @@
       "pin": "ピン留め",
       "unpin": "ピン解除",
       "rename": "名前変更",
-      "changeRole": "役割変更"
+      "changeRole": "役割変更",
+      "title": "アクション"
     },
     "noAgents": "エージェントがいません。作成して始めましょう！",
     "currentTask": "現在のタスク",
@@ -36,7 +37,8 @@
     "team": "チーム",
     "reportsTo": "上長",
     "noTeam": "未所属",
-    "workspace": "ワークスペース"
+    "workspace": "ワークスペース",
+    "advanced": "詳細オプション"
   },
   "teamMgmt": {
     "title": "組織",
@@ -59,6 +61,7 @@
   "dashboard": {
     "title": "チームダッシュボード",
     "active": "稼働中",
+    "thinking": "思考中",
     "awaiting": "承認待ち",
     "errors": "エラー",
     "completedToday": "本日完了",

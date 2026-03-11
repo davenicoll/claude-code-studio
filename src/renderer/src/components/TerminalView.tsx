@@ -463,7 +463,7 @@ export function TerminalView({ agentId, onClose, compact }: TerminalViewProps): 
           </span>
           <span className={cn(
             'px-1.5 py-0.5 rounded text-[10px] shrink-0',
-            getStatusBadge(agent.status)
+            getStatusBadge(agent.status).className
           )}>
             {t(`agent.status.${agent.status}`)}
           </span>

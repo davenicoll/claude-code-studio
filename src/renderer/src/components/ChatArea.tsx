@@ -87,7 +87,7 @@ export function ChatArea(): JSX.Element {
               <span className="text-sm font-medium">{agent.name} #{agent.sessionNumber}</span>
               <span className={cn(
                 'text-[11px] px-1.5 py-0.5 rounded',
-                getStatusBadge(agent.status)
+                getStatusBadge(agent.status).className
               )}>
                 {t(`agent.status.${agent.status}`)}
               </span>

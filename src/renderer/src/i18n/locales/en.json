@@ -27,7 +27,8 @@
       "pin": "Pin",
       "unpin": "Unpin",
       "rename": "Rename",
-      "changeRole": "Change Role"
+      "changeRole": "Change Role",
+      "title": "Actions"
     },
     "noAgents": "No agents yet. Create one to get started!",
     "currentTask": "Current task",
@@ -36,7 +37,8 @@
     "team": "Team",
     "reportsTo": "Reports To",
     "noTeam": "No Team",
-    "workspace": "Workspace"
+    "workspace": "Workspace",
+    "advanced": "Advanced Options"
   },
   "teamMgmt": {
     "title": "Organization",
@@ -59,6 +61,7 @@
   "dashboard": {
     "title": "Team Dashboard",
     "active": "Active",
+    "thinking": "Thinking",
     "awaiting": "Awaiting",
     "errors": "Errors",
     "completedToday": "Completed Today",

@@ -23,12 +23,12 @@ const statusStyles: Record<AgentStatus, StatusStyle> = {
     badgeText: 'text-blue-700 dark:text-blue-400'
   },
   tool_running: {
-    dot: 'bg-yellow-500',
+    dot: 'bg-yellow-500 animate-pulse',
     badge: 'bg-yellow-500/15',
     badgeText: 'text-yellow-700 dark:text-yellow-400'
   },
   awaiting: {
-    dot: 'bg-orange-500',
+    dot: 'bg-orange-500 animate-bounce',
     badge: 'bg-orange-500/15',
     badgeText: 'text-orange-700 dark:text-orange-400'
   },
@@ -53,8 +53,22 @@ export function getStatusDot(status: AgentStatus): string {
   return statusStyles[status].dot
 }
 
-export function getStatusBadge(status: AgentStatus): string {
-  return `${statusStyles[status].badge} ${statusStyles[status].badgeText}`
+export function getStatusBadge(status: AgentStatus): { className: string; label: string } {
+  const style = statusStyles[status]
+  const labels: Record<AgentStatus, string> = {
+    creating: 'Starting',
+    active: 'Ready',
+    thinking: 'Thinking',
+    tool_running: 'Running',
+    awaiting: 'Awaiting',
+    error: 'Error',
+    idle: 'Idle',
+    archived: 'Archived'
+  }
+  return {
+    className: `${style.badge} ${style.badgeText}`,
+    label: labels[status]
+  }
 }
 
 export function getInitials(name: string): string {

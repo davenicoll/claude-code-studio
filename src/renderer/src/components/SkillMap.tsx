@@ -41,7 +41,7 @@ export function SkillMap({ onAgentClick }: SkillMapProps): JSX.Element {
   if (skillGroups.length === 0) {
     return (
       <div className="text-sm text-muted-foreground text-center py-6">
-        {t('agent.skills')}: 未設定。エージェントにスキルを追加してください。
+        {t('profile.skills')}: {t('teamMgmt.noMembers')}
       </div>
     )
   }
@@ -85,7 +85,7 @@ export function SkillMap({ onAgentClick }: SkillMapProps): JSX.Element {
 
       {agentsWithoutSkills.length > 0 && (
         <div className="space-y-1.5 pt-2 border-t border-border">
-          <span className="text-[11px] text-muted-foreground">スキル未設定</span>
+          <span className="text-[11px] text-muted-foreground">{t('agent.skills')}: —</span>
           <div className="flex flex-wrap gap-1.5 pl-1">
             {agentsWithoutSkills.map((agent) => (
               <button

@@ -140,7 +140,7 @@ export function KanbanBoard({ onAgentClick }: KanbanBoardProps): JSX.Element {
               className={cn('flex-shrink-0 w-52 rounded-lg bg-secondary/50 border-t-2', color)}
             >
               <div className="p-2 flex items-center justify-between">
-                <span className={cn('text-[11px] font-medium px-1.5 py-0.5 rounded', getStatusBadge(status))}>
+                <span className={cn('text-[11px] font-medium px-1.5 py-0.5 rounded', getStatusBadge(status).className)}>
                   {t(`agent.status.${status}`)}
                 </span>
                 <span className="text-[10px] text-muted-foreground">{columnAgents.length}</span>
