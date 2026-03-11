@@ -45,6 +45,10 @@ interface AppState {
   // Theme
   theme: 'dark' | 'light' | 'system'
   setTheme: (theme: 'dark' | 'light' | 'system') => void
+
+  // Terminal
+  terminalFontSize: number
+  setTerminalFontSize: (size: number) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -108,6 +112,13 @@ export const useAppStore = create<AppState>((set) => ({
     // Sync to main process
     window.api?.updateSettings({ usePtyMode: use })
     set({ usePtyMode: use })
+  },
+
+  // Terminal
+  terminalFontSize: parseInt(localStorage.getItem('terminalFontSize') ?? '13'),
+  setTerminalFontSize: (size) => {
+    localStorage.setItem('terminalFontSize', String(size))
+    set({ terminalFontSize: size })
   },
 
   // Theme

@@ -11,7 +11,7 @@ interface SettingsModalProps {
 
 export function SettingsModal({ onClose }: SettingsModalProps): JSX.Element {
   const { t, i18n } = useTranslation()
-  const { theme, setTheme, usePtyMode, setUsePtyMode } = useAppStore()
+  const { theme, setTheme, usePtyMode, setUsePtyMode, terminalFontSize, setTerminalFontSize } = useAppStore()
   const [appVersion, setAppVersion] = useState('')
 
   useEffect(() => {
@@ -155,6 +155,26 @@ export function SettingsModal({ onClose }: SettingsModalProps): JSX.Element {
                 className="rounded"
               />
             </label>
+          </div>
+
+          {/* Terminal Font Size */}
+          <div>
+            <div className="flex items-center justify-between text-sm font-medium mb-2">
+              <span>Font Size</span>
+              <span className="text-xs text-muted-foreground font-mono">{terminalFontSize}px</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">9</span>
+              <input
+                type="range"
+                min={9}
+                max={24}
+                value={terminalFontSize}
+                onChange={(e) => setTerminalFontSize(parseInt(e.target.value))}
+                className="flex-1 accent-primary"
+              />
+              <span className="text-xs text-muted-foreground">24</span>
+            </div>
           </div>
 
           {/* Notifications */}

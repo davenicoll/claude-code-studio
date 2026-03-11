@@ -119,6 +119,7 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
   const { t } = useTranslation()
   const agent = useAppStore((s) => s.agents.find((a) => a.id === agentId))
   const theme = useAppStore((s) => s.theme)
+  const terminalFontSize = useAppStore((s) => s.terminalFontSize)
   const [sessionExited, setSessionExited] = useState(false)
   const [exitCode, setExitCode] = useState<number | null>(null)
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
@@ -183,7 +184,7 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
         <XtermTerminal
           agentId={agentId}
           theme={resolvedTheme}
-          fontSize={compact ? 11 : 13}
+          fontSize={compact ? Math.max(terminalFontSize - 2, 9) : terminalFontSize}
         />
       </div>
       {sessionExited && (

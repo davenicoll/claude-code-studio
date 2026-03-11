@@ -209,6 +209,17 @@ export function App(): JSX.Element {
           setSelectedAgent(agents[idx].id)
         }
       }
+      // Zoom terminal font: Ctrl+= / Ctrl+-
+      if (e.ctrlKey && (e.key === '=' || e.key === '+')) {
+        e.preventDefault()
+        const { terminalFontSize, setTerminalFontSize } = useAppStore.getState()
+        setTerminalFontSize(Math.min(terminalFontSize + 1, 24))
+      }
+      if (e.ctrlKey && e.key === '-') {
+        e.preventDefault()
+        const { terminalFontSize, setTerminalFontSize } = useAppStore.getState()
+        setTerminalFontSize(Math.max(terminalFontSize - 1, 9))
+      }
       if (e.ctrlKey && !e.shiftKey && e.key === 'l') {
         e.preventDefault()
         // Focus the composer input

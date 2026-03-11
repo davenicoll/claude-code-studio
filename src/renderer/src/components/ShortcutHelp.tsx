@@ -12,6 +12,8 @@ const SHORTCUTS = [
   { keys: 'Ctrl+Shift+Tab', action: 'Previous Agent' },
   { keys: 'Ctrl+1-9', action: 'Switch to Agent #N' },
   { keys: 'Ctrl+W', action: 'Archive Agent' },
+  { keys: 'Ctrl+=', action: 'Zoom In (Terminal Font)' },
+  { keys: 'Ctrl+-', action: 'Zoom Out (Terminal Font)' },
   { keys: 'Up/Down', action: 'Message History (in Composer)' },
   { keys: 'Enter', action: 'Send Message' },
   { keys: 'Shift+Enter', action: 'New Line' },

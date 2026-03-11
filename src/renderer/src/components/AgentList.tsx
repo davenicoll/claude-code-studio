@@ -51,6 +51,18 @@ export function AgentList(): JSX.Element {
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<{ agentId: string; x: number; y: number } | null>(null)
   const contextMenuRef = useRef<HTMLDivElement>(null)
+  const [workspaceColors, setWorkspaceColors] = useState<Record<string, string>>({})
+
+  // Load workspace colors for the "All Agents" view
+  useEffect(() => {
+    window.api.getWorkspaces().then((wsList) => {
+      const colors: Record<string, string> = {}
+      for (const ws of wsList) {
+        colors[ws.id] = ws.color
+      }
+      setWorkspaceColors(colors)
+    })
+  }, [activeWorkspaceId])
 
   // Agents needing attention: awaiting or error (filtered by workspace)
   const attentionAgents = useMemo(() => {
@@ -390,6 +402,12 @@ export function AgentList(): JSX.Element {
                         {/* Name + preview + time */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
+                            {!activeWorkspaceId && agent.workspaceId && workspaceColors[agent.workspaceId] && (
+                              <div
+                                className="w-1.5 h-1.5 rounded-full shrink-0 mr-1"
+                                style={{ backgroundColor: workspaceColors[agent.workspaceId] }}
+                              />
+                            )}
                             <span className="text-[11px] font-medium truncate">
                               {agent.name}
                             </span>
