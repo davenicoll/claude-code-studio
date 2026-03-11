@@ -197,6 +197,7 @@ export interface ElectronAPI {
   ptyResize: (agentId: string, cols: number, rows: number) => Promise<void>
   ptyInterrupt: (agentId: string) => Promise<void>
   ptyStop: (agentId: string) => Promise<void>
+  ptyLastOutput: (agentId: string) => Promise<string>
   onPtyData: (callback: (agentId: string, data: string) => void) => () => void
   onPtyExit: (callback: (agentId: string, exitCode: number) => void) => () => void
 

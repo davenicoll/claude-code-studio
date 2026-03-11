@@ -465,4 +465,9 @@ function setupPtyIPC(): void {
     if (typeof agentId !== 'string') throw new Error('Invalid agentId')
     ptySessionManager.stopSession(agentId)
   })
+
+  ipcMain.handle('pty:lastOutput', (_event, agentId: string) => {
+    if (typeof agentId !== 'string') throw new Error('Invalid agentId')
+    return ptySessionManager.getLastOutputLine(agentId)
+  })
 }

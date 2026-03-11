@@ -77,6 +77,7 @@ const api: ElectronAPI = {
   ptyResize: (agentId, cols, rows) => ipcRenderer.invoke('pty:resize', agentId, cols, rows),
   ptyInterrupt: (agentId) => ipcRenderer.invoke('pty:interrupt', agentId),
   ptyStop: (agentId) => ipcRenderer.invoke('pty:stop', agentId),
+  ptyLastOutput: (agentId) => ipcRenderer.invoke('pty:lastOutput', agentId),
   onPtyData: (callback) => {
     const handler = (_event: Electron.IpcRendererEvent, agentId: string, data: string): void => {
       callback(agentId, data)

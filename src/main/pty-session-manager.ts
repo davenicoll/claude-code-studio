@@ -13,6 +13,7 @@ interface PtySession {
   sessionId: string
   outputBuffer: string
   lastStatus: AgentStatus
+  lastOutputLine: string
 }
 
 type PtyDataCallback = (agentId: string, data: string) => void
@@ -99,7 +100,8 @@ export class PtySessionManager {
       pty: ptyProcess,
       sessionId,
       outputBuffer: '',
-      lastStatus: 'active'
+      lastStatus: 'active',
+      lastOutputLine: ''
     }
 
     ptyProcess.onData((data: string) => {
@@ -156,11 +158,21 @@ export class PtySessionManager {
     return this.sessions.has(agentId)
   }
 
+  getLastOutputLine(agentId: string): string {
+    return this.sessions.get(agentId)?.lastOutputLine ?? ''
+  }
+
   private detectAndUpdateStatus(session: PtySession, rawData: string): void {
     // Keep a rolling buffer of the last 500 chars for pattern matching
     session.outputBuffer = (session.outputBuffer + rawData).slice(-500)
     const recentClean = stripAnsi(rawData)
     const bufferClean = stripAnsi(session.outputBuffer)
+
+    // Track last meaningful output line for sidebar preview
+    const lines = recentClean.split('\n').map((l) => l.trim()).filter((l) => l.length > 2)
+    if (lines.length > 0) {
+      session.lastOutputLine = lines[lines.length - 1].slice(0, 80)
+    }
 
     let newStatus: AgentStatus | null = null
 
