@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { showToast } from './ToastContainer'
@@ -112,16 +112,25 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
   const { t } = useTranslation()
   const agent = useAppStore((s) => s.agents.find((a) => a.id === agentId))
   const theme = useAppStore((s) => s.theme)
+  const [sessionExited, setSessionExited] = useState(false)
+  const [exitCode, setExitCode] = useState<number | null>(null)
 
   // Auto-start PTY session when component mounts
   useEffect(() => {
     if (!agent) return
+    setSessionExited(false)
+    setExitCode(null)
     window.api.ptyStart(agentId).catch((err) => {
       console.error('Failed to start PTY session:', err)
     })
-    return () => {
-      // Don't stop on unmount — session should persist
-    }
+
+    const unsub = window.api.onPtyExit((id, code) => {
+      if (id === agentId) {
+        setSessionExited(true)
+        setExitCode(code)
+      }
+    })
+    return () => { unsub() }
   }, [agentId, agent?.projectPath])
 
   if (!agent) {
@@ -136,7 +145,17 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     : theme
 
-  const isInputDisabled = agent.status === 'thinking' || agent.status === 'tool_running'
+  const isInputDisabled = agent.status === 'thinking' || agent.status === 'tool_running' || sessionExited
+
+  const handleRestartSession = useCallback(async () => {
+    setSessionExited(false)
+    setExitCode(null)
+    try {
+      await window.api.ptyStart(agentId)
+    } catch (err) {
+      showToast(`Failed to restart: ${err}`, 'error')
+    }
+  }, [agentId])
 
   return (
     <div className="flex h-full flex-col">
@@ -148,6 +167,23 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
           fontSize={compact ? 11 : 13}
         />
       </div>
+      {sessionExited && (
+        <div className={cn(
+          'flex items-center justify-between px-3 py-2 text-xs',
+          exitCode === 0 ? 'bg-muted/50' : 'bg-red-500/10'
+        )}>
+          <span className={exitCode === 0 ? 'text-muted-foreground' : 'text-red-400'}>
+            {exitCode === 0 ? t('terminal.exited', 'Session ended') : t('terminal.exitedError', `Session exited with code ${exitCode}`)}
+          </span>
+          <button
+            onClick={handleRestartSession}
+            className="flex items-center gap-1 px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+          >
+            <RotateCw size={10} />
+            <span>{t('terminal.restartSession', 'Restart')}</span>
+          </button>
+        </div>
+      )}
       <Composer
         agentId={agentId}
         disabled={isInputDisabled}
