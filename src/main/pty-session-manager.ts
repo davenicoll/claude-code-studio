@@ -159,24 +159,19 @@ export class PtySessionManager {
   private detectAndUpdateStatus(session: PtySession, rawData: string): void {
     // Keep a rolling buffer of the last 500 chars for pattern matching
     session.outputBuffer = (session.outputBuffer + rawData).slice(-500)
-    const clean = stripAnsi(session.outputBuffer)
+    const recentClean = stripAnsi(rawData)
+    const bufferClean = stripAnsi(session.outputBuffer)
 
     let newStatus: AgentStatus | null = null
 
-    // Order matters — more specific patterns first
-    if (/\b(Allow|Deny|permission)\b/i.test(clean)) {
+    // Order matters — more specific patterns first, check recent data primarily
+    if (/\b(Allow|Deny)\b/.test(recentClean) && /\b(yes|no|allow|deny)\b/i.test(recentClean)) {
       newStatus = 'awaiting'
-    } else if (/\b(Error|error|ENOENT|EINVAL|failed)\b/.test(clean)) {
-      // Only set error if it's in the recent output
-      const recentClean = stripAnsi(rawData)
-      if (/\b(Error|error|ENOENT|EINVAL|failed)\b/.test(recentClean)) {
-        newStatus = 'error'
-      }
-    } else if (/\b(Read|Edit|Write|Bash|Glob|Grep|Agent|Skill)\s/.test(clean)) {
-      newStatus = 'tool_running'
-    } else if (/Thinking|thinking|⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏/.test(rawData)) {
+    } else if (/⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏/.test(rawData) || /Thinking\.\.\./.test(recentClean)) {
       newStatus = 'thinking'
-    } else if (/[❯>]\s*$/.test(clean)) {
+    } else if (/^ *(Read|Edit|Write|Bash|Glob|Grep|Agent|Skill)\b/.test(recentClean)) {
+      newStatus = 'tool_running'
+    } else if (/[❯>]\s*$/.test(bufferClean.split('\n').pop() ?? '')) {
       newStatus = 'active'
     }
 
@@ -187,7 +182,7 @@ export class PtySessionManager {
 
       // Update currentTask for tool_running
       if (newStatus === 'tool_running') {
-        const toolMatch = stripAnsi(rawData).match(/\b(Read|Edit|Write|Bash|Glob|Grep|Agent|Skill)\b/)
+        const toolMatch = recentClean.match(/^ *(Read|Edit|Write|Bash|Glob|Grep|Agent|Skill)\b/)
         if (toolMatch) {
           this.database.updateAgent(session.agentId, { currentTask: `Running ${toolMatch[1]}...` })
         }

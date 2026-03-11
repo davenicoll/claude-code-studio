@@ -427,6 +427,8 @@ app.on('before-quit', () => {
 function setupPtyIPC(): void {
   ipcMain.handle('pty:start', async (_event, agentId: string) => {
     if (typeof agentId !== 'string' || !agentId) throw new Error('Invalid agentId')
+    // Skip if session already running
+    if (ptySessionManager.hasSession(agentId)) return
     const agent = database.getAgent(agentId)
     if (!agent) throw new Error(`Agent not found: ${agentId}`)
     await ptySessionManager.startSession(agent)
