@@ -128,7 +128,13 @@ function setupIPC(): void {
       throw new Error('name, projectPath, and projectName are required')
     }
     const agent = database.createAgent(params)
-    await sessionManager.startSession(agent)
+    const { usePtyMode } = database.getSettings()
+    if (usePtyMode) {
+      // PTY mode: session will be started by PtyTerminalView via pty:start
+      database.updateAgent(agent.id, { status: 'idle' })
+    } else {
+      await sessionManager.startSession(agent)
+    }
     return database.getAgent(agent.id)
   })
 
@@ -148,7 +154,12 @@ function setupIPC(): void {
 
   ipcMain.handle('agent:archive', async (_event, id: string) => {
     if (typeof id !== 'string') throw new Error('Invalid agent ID')
-    await sessionManager.stopSession(id)
+    const { usePtyMode } = database.getSettings()
+    if (usePtyMode) {
+      ptySessionManager.stopSession(id)
+    } else {
+      await sessionManager.stopSession(id)
+    }
     database.updateAgent(id, { status: 'archived' })
   })
 
@@ -171,14 +182,25 @@ function setupIPC(): void {
     if (typeof id !== 'string') throw new Error('Invalid agent ID')
     const agent = database.getAgent(id)
     if (agent) {
-      await sessionManager.stopSession(id)
-      await sessionManager.startSession(agent)
+      const { usePtyMode } = database.getSettings()
+      if (usePtyMode) {
+        ptySessionManager.stopSession(id)
+        await ptySessionManager.startSession(agent)
+      } else {
+        await sessionManager.stopSession(id)
+        await sessionManager.startSession(agent)
+      }
     }
   })
 
   ipcMain.handle('agent:interrupt', async (_event, id: string) => {
     if (typeof id !== 'string') throw new Error('Invalid agent ID')
-    await sessionManager.interruptSession(id)
+    const { usePtyMode } = database.getSettings()
+    if (usePtyMode) {
+      ptySessionManager.interruptSession(id)
+    } else {
+      await sessionManager.interruptSession(id)
+    }
   })
 
   // Broadcast — send in parallel
@@ -293,6 +315,15 @@ function setupIPC(): void {
       throw new Error('rootPath is required')
     }
     return scanWorkspaces(rootPath.trim())
+  })
+
+  // Settings
+  ipcMain.handle('settings:get', () => {
+    return database.getSettings()
+  })
+
+  ipcMain.handle('settings:update', (_event, updates: Record<string, unknown>) => {
+    return database.updateSettings(updates)
   })
 
   ipcMain.handle('app:titlebar-theme', (_event, isDark: boolean) => {

@@ -92,6 +92,10 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener('pty:exit', handler)
   },
 
+  // Settings
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  updateSettings: (updates) => ipcRenderer.invoke('settings:update', updates),
+
   // App
   getAppVersion: () => ipcRenderer.invoke('app:version'),
   getPlatform: () => process.platform,

@@ -105,6 +105,8 @@ export const useAppStore = create<AppState>((set) => ({
   usePtyMode: localStorage.getItem('usePtyMode') !== 'false',
   setUsePtyMode: (use) => {
     localStorage.setItem('usePtyMode', String(use))
+    // Sync to main process
+    window.api?.updateSettings({ usePtyMode: use })
     set({ usePtyMode: use })
   },
 

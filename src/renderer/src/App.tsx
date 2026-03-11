@@ -117,6 +117,9 @@ export function App(): JSX.Element {
     setAgents(agentList)
     const stats = await window.api.getTeamStats()
     setTeamStats(stats)
+    // Sync PTY mode setting to main process
+    const { usePtyMode } = useAppStore.getState()
+    window.api.updateSettings({ usePtyMode })
   }, [setAgents, setTeamStats])
 
   useEffect(() => {

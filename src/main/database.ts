@@ -4,6 +4,10 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync } from '
 import { v4 as uuidv4 } from 'uuid'
 import type { Agent, Team, Message, TaskChain, Broadcast, CreateAgentParams, TeamStats, Workspace, CreateWorkspaceParams } from '@shared/types'
 
+interface AppSettings {
+  usePtyMode: boolean
+}
+
 interface DBData {
   agents: Agent[]
   teams: Team[]
@@ -12,6 +16,7 @@ interface DBData {
   broadcasts: Broadcast[]
   workspaces: Workspace[]
   activeWorkspaceId: string | null
+  settings: AppSettings
   nextMessageId: number
 }
 
@@ -42,6 +47,7 @@ export class Database {
       broadcasts: [],
       workspaces: [],
       activeWorkspaceId: null,
+      settings: { usePtyMode: true },
       nextMessageId: 1
     }
   }
@@ -289,6 +295,17 @@ export class Database {
 
   getActiveWorkspaceId(): string | null {
     return this.data.activeWorkspaceId
+  }
+
+  // Settings
+  getSettings(): AppSettings {
+    return this.data.settings ?? { usePtyMode: true }
+  }
+
+  updateSettings(updates: Partial<AppSettings>): AppSettings {
+    this.data.settings = { ...this.getSettings(), ...updates }
+    this.save()
+    return this.data.settings
   }
 
   close(): void {

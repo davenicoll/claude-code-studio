@@ -135,6 +135,10 @@ export interface DiscoveredWorkspace {
   lastModified: string
 }
 
+export interface AppSettings {
+  usePtyMode: boolean
+}
+
 export interface ElectronAPI {
   // Agent management
   createAgent: (params: CreateAgentParams) => Promise<Agent>
@@ -195,6 +199,10 @@ export interface ElectronAPI {
   ptyStop: (agentId: string) => Promise<void>
   onPtyData: (callback: (agentId: string, data: string) => void) => () => void
   onPtyExit: (callback: (agentId: string, exitCode: number) => void) => () => void
+
+  // Settings
+  getSettings: () => Promise<AppSettings>
+  updateSettings: (updates: Partial<AppSettings>) => Promise<AppSettings>
 
   // App
   getAppVersion: () => Promise<string>
