@@ -3,12 +3,14 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { SessionManager } from './session-manager'
 import { Database } from './database'
+import { ChainOrchestrator } from './chain-orchestrator'
 import type { CreateAgentParams } from '@shared/types'
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let sessionManager: SessionManager
 let database: Database
+let chainOrchestrator: ChainOrchestrator
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -244,8 +246,14 @@ app.whenReady().then(() => {
     database.addMessage(agentId, message.role, message.contentType, message.content, message.metadata ?? undefined)
     // Send to renderer
     mainWindow?.webContents.send('agent:output', agentId, message)
+    // Feed text output to chain orchestrator for keyword matching
+    if (message.contentType === 'text' && message.role === 'agent') {
+      chainOrchestrator.handleAgentOutput(agentId, message.content)
+    }
   }, (agentId, status) => {
     mainWindow?.webContents.send('agent:status-change', agentId, status)
+    // Feed status changes to chain orchestrator
+    chainOrchestrator.handleStatusChange(agentId, status)
     // Show notification for important status changes
     if (status === 'awaiting' || status === 'error') {
       const agent = database.getAgent(agentId)
@@ -257,6 +265,8 @@ app.whenReady().then(() => {
       }
     }
   })
+
+  chainOrchestrator = new ChainOrchestrator(database, sessionManager)
 
   setupIPC()
   createWindow()

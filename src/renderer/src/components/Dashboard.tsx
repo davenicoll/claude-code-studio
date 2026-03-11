@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { cn } from '../lib/utils'
-import { Users, AlertCircle, XCircle, CheckCircle2 } from 'lucide-react'
+import { Users, AlertCircle, XCircle, CheckCircle2, FileText } from 'lucide-react'
 import { ActivityLog } from './ActivityLog'
+import { DailyReport } from './DailyReport'
 import type { AgentStatus } from '@shared/types'
 
 const statusColors: Record<AgentStatus, string> = {
@@ -19,6 +21,7 @@ const statusColors: Record<AgentStatus, string> = {
 export function Dashboard(): JSX.Element {
   const { t } = useTranslation()
   const { agents, teamStats, setSelectedAgent, toggleDashboard } = useAppStore()
+  const [showDailyReport, setShowDailyReport] = useState(false)
 
   const handleAgentClick = (id: string): void => {
     setSelectedAgent(id)
@@ -27,7 +30,16 @@ export function Dashboard(): JSX.Element {
 
   return (
     <div className="border-b border-border bg-card p-4 space-y-4 max-h-[50vh] overflow-y-auto">
-      <h2 className="text-sm font-semibold">{t('dashboard.title')}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">{t('dashboard.title')}</h2>
+        <button
+          onClick={() => setShowDailyReport(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-secondary hover:bg-accent transition-colors"
+        >
+          <FileText size={14} />
+          {t('dailyReport.button')}
+        </button>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-4 gap-3">
@@ -87,6 +99,10 @@ export function Dashboard(): JSX.Element {
 
       {/* Activity Log */}
       <ActivityLog />
+
+      {showDailyReport && (
+        <DailyReport onClose={() => setShowDailyReport(false)} />
+      )}
     </div>
   )
 }
