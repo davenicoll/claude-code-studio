@@ -4,8 +4,17 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync } from '
 import { v4 as uuidv4 } from 'uuid'
 import type { Agent, Team, Message, TaskChain, Broadcast, CreateAgentParams, TeamStats, Workspace, CreateWorkspaceParams } from '@shared/types'
 
+interface WindowBounds {
+  x?: number
+  y?: number
+  width: number
+  height: number
+  isMaximized?: boolean
+}
+
 interface AppSettings {
   usePtyMode: boolean
+  windowBounds?: WindowBounds
 }
 
 interface DBData {

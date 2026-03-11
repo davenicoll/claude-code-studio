@@ -10,8 +10,10 @@ import { BroadcastModal } from './components/BroadcastModal'
 import { CreateAgentDialog } from './components/CreateAgentDialog'
 import { ToastContainer, showToast } from './components/ToastContainer'
 import { QuickSearch } from './components/QuickSearch'
+import { ShortcutHelp } from './components/ShortcutHelp'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { WorkspaceScanner } from './components/WorkspaceScanner'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { cn } from './lib/utils'
 import type { DiscoveredWorkspace } from '@shared/types'
 
@@ -111,6 +113,13 @@ export function App(): JSX.Element {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showWorkspaceScanner, setShowWorkspaceScanner] = useState(false)
   const [prefillWorkspace, setPrefillWorkspace] = useState<DiscoveredWorkspace | null>(null)
+
+  // Listen for QuickSearch new-agent command
+  useEffect(() => {
+    const handler = (): void => setShowCreateDialog(true)
+    document.addEventListener('app:new-agent', handler)
+    return () => document.removeEventListener('app:new-agent', handler)
+  }, [])
 
   const loadAgents = useCallback(async () => {
     const agentList = await window.api.getAgents()
@@ -227,16 +236,28 @@ export function App(): JSX.Element {
     <div className="flex flex-col h-screen overflow-hidden">
       <TitleBar />
 
-      {showDashboard && <Dashboard onOpenScanner={() => setShowWorkspaceScanner(true)} />}
+      {showDashboard && (
+        <ErrorBoundary fallbackMessage="Dashboard failed to render">
+          <Dashboard onOpenScanner={() => setShowWorkspaceScanner(true)} />
+        </ErrorBoundary>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {agents.length === 0 ? (
           <WelcomeScreen onCreateAgent={() => setShowCreateDialog(true)} onOpenScanner={() => setShowWorkspaceScanner(true)} />
         ) : (
           <>
-            <AgentList />
-            <PaneGrid />
-            {showRightPane && <ContextPane />}
+            <ErrorBoundary fallbackMessage="Sidebar failed to render">
+              <AgentList />
+            </ErrorBoundary>
+            <ErrorBoundary fallbackMessage="Terminal failed to render">
+              <PaneGrid />
+            </ErrorBoundary>
+            {showRightPane && (
+              <ErrorBoundary fallbackMessage="Context pane failed to render">
+                <ContextPane />
+              </ErrorBoundary>
+            )}
           </>
         )}
       </div>
@@ -244,6 +265,7 @@ export function App(): JSX.Element {
       <BroadcastModal />
       <ToastContainer />
       <QuickSearch />
+      <ShortcutHelp />
       {showCreateDialog && (
         <CreateAgentDialog
           onClose={() => {

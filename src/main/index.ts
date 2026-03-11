@@ -19,9 +19,14 @@ let database: Database
 let chainOrchestrator: ChainOrchestrator
 
 function createWindow(): void {
+  const settings = database.getSettings()
+  const bounds = settings.windowBounds
+
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: bounds?.width ?? 1280,
+    height: bounds?.height ?? 800,
+    x: bounds?.x,
+    y: bounds?.y,
     minWidth: 900,
     minHeight: 600,
     show: false,
@@ -40,9 +45,27 @@ function createWindow(): void {
     }
   })
 
+  if (bounds?.isMaximized) {
+    mainWindow.maximize()
+  }
+
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
   })
+
+  // Save window bounds on resize/move
+  const saveWindowBounds = (): void => {
+    if (!mainWindow) return
+    const isMaximized = mainWindow.isMaximized()
+    const windowBounds = isMaximized ? settings.windowBounds : { ...mainWindow.getBounds(), isMaximized: false }
+    if (windowBounds) {
+      database.updateSettings({ windowBounds: { ...windowBounds, isMaximized } })
+    }
+  }
+  mainWindow.on('resize', saveWindowBounds)
+  mainWindow.on('move', saveWindowBounds)
+  mainWindow.on('maximize', saveWindowBounds)
+  mainWindow.on('unmaximize', saveWindowBounds)
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     try {
