@@ -4,17 +4,17 @@ import { useAppStore } from '../stores/useAppStore'
 import { showToast } from './ToastContainer'
 import { cn } from '../lib/utils'
 import { getStatusBadge } from '../lib/status'
-import { RotateCw, Square, Terminal, AlertCircle, Pin, PinOff } from 'lucide-react'
+import { RotateCw, Square, Terminal, AlertCircle, Pin, PinOff, Server } from 'lucide-react'
 import { XtermTerminal } from './XtermTerminal'
 import { Composer } from './Composer'
-import type { Agent } from '@shared/types'
+import type { Agent, Workspace } from '@shared/types'
 
 interface PtyTerminalViewProps {
   agentId: string
   compact?: boolean
 }
 
-function AgentHeader({ agent, compact }: { agent: Agent; compact: boolean }): JSX.Element {
+function AgentHeader({ agent, compact, workspace }: { agent: Agent; compact: boolean; workspace: Workspace | null }): JSX.Element {
   const { t } = useTranslation()
   const updateAgentInList = useAppStore((s) => s.updateAgentInList)
 
@@ -69,6 +69,12 @@ function AgentHeader({ agent, compact }: { agent: Agent; compact: boolean }): JS
         <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full', statusBadge.className)}>
           {statusBadge.label}
         </span>
+        {workspace?.connectionType === 'ssh' && (
+          <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-500">
+            <Server size={9} />
+            SSH
+          </span>
+        )}
         {agent.currentTask && (
           <span className="text-[10px] text-muted-foreground/60 truncate max-w-[200px]">
             {agent.currentTask}
@@ -115,6 +121,18 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
   const theme = useAppStore((s) => s.theme)
   const [sessionExited, setSessionExited] = useState(false)
   const [exitCode, setExitCode] = useState<number | null>(null)
+  const [workspace, setWorkspace] = useState<Workspace | null>(null)
+
+  // Load workspace info for SSH badge
+  useEffect(() => {
+    if (!agent?.workspaceId) {
+      setWorkspace(null)
+      return
+    }
+    window.api.getWorkspaces().then((wsList) => {
+      setWorkspace(wsList.find((w) => w.id === agent.workspaceId) ?? null)
+    })
+  }, [agent?.workspaceId])
 
   // Auto-start PTY session when component mounts
   useEffect(() => {
@@ -160,7 +178,7 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
 
   return (
     <div className="flex h-full flex-col">
-      <AgentHeader agent={agent} compact={compact} />
+      <AgentHeader agent={agent} compact={compact} workspace={workspace} />
       <div className="flex-1 min-h-0">
         <XtermTerminal
           agentId={agentId}

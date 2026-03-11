@@ -104,6 +104,7 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
       <div className="flex items-end gap-2 p-2">
         <textarea
           ref={textareaRef}
+          data-composer-input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}

@@ -123,6 +123,21 @@ function createTray(): void {
   })
 }
 
+// Determine if an agent's workspace uses SSH
+function isAgentSsh(agentId: string): boolean {
+  const agent = database.getAgent(agentId)
+  if (!agent?.workspaceId) return false
+  const workspace = database.getWorkspaces().find((w) => w.id === agent.workspaceId)
+  return workspace?.connectionType === 'ssh'
+}
+
+// Get workspace for an agent (for SSH sessions)
+function getAgentWorkspace(agentId: string): import('@shared/types').Workspace | null {
+  const agent = database.getAgent(agentId)
+  if (!agent?.workspaceId) return null
+  return database.getWorkspaces().find((w) => w.id === agent.workspaceId) ?? null
+}
+
 function setupIPC(): void {
   // Agent management
   ipcMain.handle('agent:create', async (_event, params: CreateAgentParams) => {
@@ -159,7 +174,11 @@ function setupIPC(): void {
     if (typeof id !== 'string') throw new Error('Invalid agent ID')
     const { usePtyMode } = database.getSettings()
     if (usePtyMode) {
-      ptySessionManager.stopSession(id)
+      if (sshSessionManager.hasSession(id)) {
+        sshSessionManager.stopSession(id)
+      } else {
+        ptySessionManager.stopSession(id)
+      }
     } else {
       await sessionManager.stopSession(id)
     }
@@ -174,7 +193,11 @@ function setupIPC(): void {
     database.addMessage(agentId, 'manager', 'text', content)
     const { usePtyMode } = database.getSettings()
     if (usePtyMode) {
-      ptySessionManager.writeInput(agentId, content + '\n')
+      if (sshSessionManager.hasSession(agentId)) {
+        sshSessionManager.writeInput(agentId, content + '\n')
+      } else {
+        ptySessionManager.writeInput(agentId, content + '\n')
+      }
     } else {
       await sessionManager.sendInput(agentId, content)
     }
@@ -192,8 +215,16 @@ function setupIPC(): void {
     if (agent) {
       const { usePtyMode } = database.getSettings()
       if (usePtyMode) {
-        ptySessionManager.stopSession(id)
-        await ptySessionManager.startSession(agent)
+        if (sshSessionManager.hasSession(id)) {
+          sshSessionManager.stopSession(id)
+          const workspace = getAgentWorkspace(id)
+          if (workspace) {
+            await sshSessionManager.startSession(agent, workspace)
+          }
+        } else {
+          ptySessionManager.stopSession(id)
+          await ptySessionManager.startSession(agent)
+        }
       } else {
         await sessionManager.stopSession(id)
         await sessionManager.startSession(agent)
@@ -205,7 +236,11 @@ function setupIPC(): void {
     if (typeof id !== 'string') throw new Error('Invalid agent ID')
     const { usePtyMode } = database.getSettings()
     if (usePtyMode) {
-      ptySessionManager.interruptSession(id)
+      if (sshSessionManager.hasSession(id)) {
+        sshSessionManager.interruptSession(id)
+      } else {
+        ptySessionManager.interruptSession(id)
+      }
     } else {
       await sessionManager.interruptSession(id)
     }
@@ -221,7 +256,11 @@ function setupIPC(): void {
     await Promise.all(agentIds.map(async (agentId) => {
       database.addMessage(agentId, 'manager', 'text', message)
       if (usePtyMode) {
-        ptySessionManager.writeInput(agentId, message + '\n')
+        if (sshSessionManager.hasSession(agentId)) {
+          sshSessionManager.writeInput(agentId, message + '\n')
+        } else {
+          ptySessionManager.writeInput(agentId, message + '\n')
+        }
       } else {
         await sessionManager.sendInput(agentId, message)
       }
@@ -544,37 +583,64 @@ app.on('before-quit', () => {
 function setupPtyIPC(): void {
   ipcMain.handle('pty:start', async (_event, agentId: string) => {
     if (typeof agentId !== 'string' || !agentId) throw new Error('Invalid agentId')
-    // Skip if session already running
-    if (ptySessionManager.hasSession(agentId)) return
+    // Skip if session already running (either local or SSH)
+    if (ptySessionManager.hasSession(agentId) || sshSessionManager.hasSession(agentId)) return
     const agent = database.getAgent(agentId)
     if (!agent) throw new Error(`Agent not found: ${agentId}`)
-    await ptySessionManager.startSession(agent)
+
+    // Route to SSH or local PTY based on workspace connection type
+    if (isAgentSsh(agentId)) {
+      const workspace = getAgentWorkspace(agentId)
+      if (!workspace) throw new Error('SSH workspace not found')
+      await sshSessionManager.startSession(agent, workspace)
+    } else {
+      await ptySessionManager.startSession(agent)
+    }
   })
 
   ipcMain.handle('pty:write', async (_event, agentId: string, data: string) => {
     if (typeof agentId !== 'string' || typeof data !== 'string') throw new Error('Invalid params')
-    ptySessionManager.writeInput(agentId, data)
+    if (sshSessionManager.hasSession(agentId)) {
+      sshSessionManager.writeInput(agentId, data)
+    } else {
+      ptySessionManager.writeInput(agentId, data)
+    }
   })
 
   ipcMain.handle('pty:resize', async (_event, agentId: string, cols: number, rows: number) => {
     if (typeof agentId !== 'string' || typeof cols !== 'number' || typeof rows !== 'number') {
       throw new Error('Invalid params')
     }
-    ptySessionManager.resize(agentId, cols, rows)
+    if (sshSessionManager.hasSession(agentId)) {
+      sshSessionManager.resize(agentId, cols, rows)
+    } else {
+      ptySessionManager.resize(agentId, cols, rows)
+    }
   })
 
   ipcMain.handle('pty:interrupt', async (_event, agentId: string) => {
     if (typeof agentId !== 'string') throw new Error('Invalid agentId')
-    ptySessionManager.interruptSession(agentId)
+    if (sshSessionManager.hasSession(agentId)) {
+      sshSessionManager.interruptSession(agentId)
+    } else {
+      ptySessionManager.interruptSession(agentId)
+    }
   })
 
   ipcMain.handle('pty:stop', async (_event, agentId: string) => {
     if (typeof agentId !== 'string') throw new Error('Invalid agentId')
-    ptySessionManager.stopSession(agentId)
+    if (sshSessionManager.hasSession(agentId)) {
+      sshSessionManager.stopSession(agentId)
+    } else {
+      ptySessionManager.stopSession(agentId)
+    }
   })
 
   ipcMain.handle('pty:lastOutput', (_event, agentId: string) => {
     if (typeof agentId !== 'string') throw new Error('Invalid agentId')
+    if (sshSessionManager.hasSession(agentId)) {
+      return sshSessionManager.getLastOutputLine(agentId)
+    }
     return ptySessionManager.getLastOutputLine(agentId)
   })
 }

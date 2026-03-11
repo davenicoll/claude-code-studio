@@ -33,7 +33,6 @@ export function WorkspaceSwitcher({ className }: WorkspaceSwitcherProps): JSX.El
     const handler = (e: MouseEvent): void => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false)
-        setIsCreating(false)
       }
     }
     document.addEventListener('mousedown', handler)

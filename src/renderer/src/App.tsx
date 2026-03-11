@@ -200,6 +200,12 @@ export function App(): JSX.Element {
           setSelectedAgent(agents[idx].id)
         }
       }
+      if (e.ctrlKey && !e.shiftKey && e.key === 'l') {
+        e.preventDefault()
+        // Focus the composer input
+        const composer = document.querySelector('[data-composer-input]') as HTMLTextAreaElement | null
+        composer?.focus()
+      }
       if (e.ctrlKey && !e.shiftKey && e.key === 'w') {
         e.preventDefault()
         if (selectedAgentId) {

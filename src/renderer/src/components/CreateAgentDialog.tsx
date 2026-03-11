@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
-import { X, FolderOpen } from 'lucide-react'
-import type { DiscoveredWorkspace } from '@shared/types'
+import { X, FolderOpen, Server } from 'lucide-react'
+import type { DiscoveredWorkspace, Workspace } from '@shared/types'
 
 interface CreateAgentDialogProps {
   onClose: () => void
@@ -21,7 +21,20 @@ export function CreateAgentDialog({ onClose, prefill }: CreateAgentDialogProps):
   const [reportTo, setReportTo] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null)
   const activeAgents = agents.filter((a) => a.status !== 'archived')
+
+  // Load active workspace info
+  useEffect(() => {
+    const wsId = useAppStore.getState().activeWorkspaceId
+    if (!wsId) {
+      setActiveWorkspace(null)
+      return
+    }
+    window.api.getWorkspaces().then((wsList) => {
+      setActiveWorkspace(wsList.find((w) => w.id === wsId) ?? null)
+    })
+  }, [])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
@@ -84,6 +97,21 @@ export function CreateAgentDialog({ onClose, prefill }: CreateAgentDialogProps):
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Workspace indicator */}
+          {activeWorkspace && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg text-xs">
+              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: activeWorkspace.color }} />
+              <span className="text-muted-foreground">{t('agent.workspace', 'Workspace')}:</span>
+              <span className="font-medium">{activeWorkspace.name}</span>
+              {activeWorkspace.connectionType === 'ssh' && (
+                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-500 text-[10px]">
+                  <Server size={9} />
+                  SSH
+                </span>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-medium text-muted-foreground">{t('agent.name')}</label>
             <input
@@ -102,7 +130,7 @@ export function CreateAgentDialog({ onClose, prefill }: CreateAgentDialogProps):
                 type="text"
                 value={projectPath}
                 onChange={(e) => setProjectPath(e.target.value)}
-                placeholder="C:/Users/user/my-project"
+                placeholder={activeWorkspace?.connectionType === 'ssh' ? '/home/user/my-project' : 'C:/Users/user/my-project'}
                 className="flex-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
               />
               <button
