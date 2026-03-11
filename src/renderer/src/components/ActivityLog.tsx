@@ -45,6 +45,7 @@ export function ActivityLog(): JSX.Element {
   const { agents, setSelectedAgent, toggleDashboard } = useAppStore()
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [filterType, setFilterType] = useState<ActivityEventType | 'all'>('all')
   const nextIdRef = useRef(1)
 
   const getAgentName = useCallback(
@@ -148,8 +149,23 @@ export function ActivityLog(): JSX.Element {
         {isCollapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
 
-      {/* Event List */}
+      {/* Filter Bar + Event List */}
       {!isCollapsed && (
+        <div>
+          <div className="flex items-center gap-1 px-4 py-1 border-t border-border/50">
+            {(['all', 'completed', 'error', 'tool', 'message'] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type)}
+                className={cn(
+                  'text-[10px] px-1.5 py-0.5 rounded transition-colors',
+                  filterType === type ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:bg-muted/50'
+                )}
+              >
+                {type === 'all' ? 'All' : t(`activity.type.${type}`)}
+              </button>
+            ))}
+          </div>
         <div className="max-h-[200px] overflow-y-auto">
           {events.length === 0 && (
             <div className="px-4 py-3 text-xs text-muted-foreground text-center">
@@ -157,7 +173,7 @@ export function ActivityLog(): JSX.Element {
             </div>
           )}
 
-          {events.map((event) => {
+          {events.filter((e) => filterType === 'all' || e.eventType === filterType).map((event) => {
             const Icon = eventIcons[event.eventType]
             return (
               <button
@@ -190,6 +206,7 @@ export function ActivityLog(): JSX.Element {
               </button>
             )
           })}
+        </div>
         </div>
       )}
     </div>

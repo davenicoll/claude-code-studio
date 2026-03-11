@@ -107,6 +107,21 @@ export function XtermTerminal({ agentId, theme = 'dark', fontSize = 13 }: XtermT
       window.api.ptyWrite(agentId, data)
     })
 
+    // Right-click context menu: copy selection
+    terminal.element?.addEventListener('contextmenu', (e) => {
+      const selection = terminal.getSelection()
+      if (selection) {
+        e.preventDefault()
+        navigator.clipboard.writeText(selection)
+        // Brief visual flash to indicate copy
+        const el = terminal.element
+        if (el) {
+          el.style.opacity = '0.7'
+          setTimeout(() => { el.style.opacity = '1' }, 100)
+        }
+      }
+    })
+
     // Receive PTY output
     const unsubData = window.api.onPtyData((id, data) => {
       if (id === agentId) {
