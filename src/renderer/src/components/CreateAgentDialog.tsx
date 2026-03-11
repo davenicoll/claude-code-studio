@@ -9,14 +9,17 @@ interface CreateAgentDialogProps {
 
 export function CreateAgentDialog({ onClose }: CreateAgentDialogProps): JSX.Element {
   const { t } = useTranslation()
-  const { addAgent, setSelectedAgent } = useAppStore()
+  const { agents, addAgent, setSelectedAgent } = useAppStore()
   const [name, setName] = useState('')
   const [projectPath, setProjectPath] = useState('')
   const [projectName, setProjectName] = useState('')
   const [roleLabel, setRoleLabel] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
+  const [skillsInput, setSkillsInput] = useState('')
+  const [reportTo, setReportTo] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const activeAgents = agents.filter((a) => a.status !== 'archived')
 
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
@@ -44,12 +47,15 @@ export function CreateAgentDialog({ onClose }: CreateAgentDialogProps): JSX.Elem
     setLoading(true)
     setError(null)
     try {
+      const skills = skillsInput.split(',').map((s) => s.trim()).filter(Boolean)
       const agent = await window.api.createAgent({
         name: name.trim(),
         projectPath: projectPath.trim(),
         projectName: projectName.trim(),
         roleLabel: roleLabel.trim() || undefined,
-        systemPrompt: systemPrompt.trim() || undefined
+        systemPrompt: systemPrompt.trim() || undefined,
+        skills: skills.length > 0 ? skills : undefined,
+        reportTo: reportTo || undefined
       })
       addAgent(agent)
       setSelectedAgent(agent.id)
@@ -123,6 +129,31 @@ export function CreateAgentDialog({ onClose }: CreateAgentDialogProps): JSX.Elem
               placeholder="frontend / backend / test"
               className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
             />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">{t('agent.skills')}</label>
+            <input
+              type="text"
+              value={skillsInput}
+              onChange={(e) => setSkillsInput(e.target.value)}
+              placeholder={t('agent.skillsPlaceholder')}
+              className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">{t('agent.reportsTo')}</label>
+            <select
+              value={reportTo}
+              onChange={(e) => setReportTo(e.target.value)}
+              className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
+            >
+              <option value="">— {t('agent.noTeam')} —</option>
+              {activeAgents.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}{a.roleLabel ? ` (${a.roleLabel})` : ''}</option>
+              ))}
+            </select>
           </div>
 
           <div>

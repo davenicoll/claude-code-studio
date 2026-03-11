@@ -219,6 +219,26 @@ function setupIPC(): void {
     return database.deleteChain(id)
   })
 
+  // Teams
+  ipcMain.handle('team:create', (_event, name: string, color: string) => {
+    if (typeof name !== 'string' || !name.trim()) throw new Error('Team name is required')
+    return database.createTeam(name.trim(), color || '#6366f1')
+  })
+
+  ipcMain.handle('team:list', () => {
+    return database.getTeams()
+  })
+
+  ipcMain.handle('team:update', (_event, id: string, updates: Record<string, unknown>) => {
+    if (typeof id !== 'string') throw new Error('Invalid team ID')
+    return database.updateTeam(id, updates)
+  })
+
+  ipcMain.handle('team:delete', (_event, id: string) => {
+    if (typeof id !== 'string') throw new Error('Invalid team ID')
+    return database.deleteTeam(id)
+  })
+
   // Team stats
   ipcMain.handle('team:stats', () => {
     return database.getTeamStats()

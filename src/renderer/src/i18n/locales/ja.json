@@ -30,7 +30,24 @@
       "changeRole": "役割変更"
     },
     "noAgents": "エージェントがいません。作成して始めましょう！",
-    "currentTask": "現在のタスク"
+    "currentTask": "現在のタスク",
+    "skills": "スキル",
+    "skillsPlaceholder": "例: React, TypeScript, Testing",
+    "team": "チーム",
+    "reportsTo": "上長",
+    "noTeam": "未所属"
+  },
+  "teamMgmt": {
+    "title": "組織",
+    "orgChart": "組織図",
+    "skillMap": "スキルマップ",
+    "kanban": "カンバン",
+    "newTeam": "新規チーム",
+    "teamName": "チーム名",
+    "teamColor": "カラー",
+    "noMembers": "メンバーなし",
+    "unassigned": "未所属",
+    "dragHint": "ドラッグで組み替え"
   },
   "chat": {
     "placeholder": "メッセージを入力...（Enterで送信、Shift+Enterで改行）",

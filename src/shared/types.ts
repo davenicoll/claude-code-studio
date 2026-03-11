@@ -21,8 +21,17 @@ export interface Agent {
   systemPrompt: string | null
   claudeSessionId: string | null
   isPinned: boolean
+  skills: string[]
+  teamId: string | null
+  reportTo: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface Team {
+  id: string
+  name: string
+  color: string
 }
 
 export type MessageRole = 'manager' | 'agent' | 'tool' | 'system'
@@ -68,6 +77,9 @@ export interface CreateAgentParams {
   projectName: string
   roleLabel?: string
   systemPrompt?: string
+  skills?: string[]
+  teamId?: string
+  reportTo?: string
 }
 
 export interface TeamStats {
@@ -108,6 +120,12 @@ export interface ElectronAPI {
   getChains: () => Promise<TaskChain[]>
   updateChain: (id: string, updates: Partial<TaskChain>) => Promise<TaskChain>
   deleteChain: (id: string) => Promise<void>
+
+  // Teams
+  createTeam: (name: string, color: string) => Promise<Team>
+  getTeams: () => Promise<Team[]>
+  updateTeam: (id: string, updates: Partial<Team>) => Promise<Team>
+  deleteTeam: (id: string) => Promise<void>
 
   // Team stats
   getTeamStats: () => Promise<TeamStats>

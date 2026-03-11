@@ -26,6 +26,12 @@ const api: ElectronAPI = {
   updateChain: (id, updates) => ipcRenderer.invoke('chain:update', id, updates),
   deleteChain: (id) => ipcRenderer.invoke('chain:delete', id),
 
+  // Teams
+  createTeam: (name, color) => ipcRenderer.invoke('team:create', name, color),
+  getTeams: () => ipcRenderer.invoke('team:list'),
+  updateTeam: (id, updates) => ipcRenderer.invoke('team:update', id, updates),
+  deleteTeam: (id) => ipcRenderer.invoke('team:delete', id),
+
   // Team stats
   getTeamStats: () => ipcRenderer.invoke('team:stats'),
 

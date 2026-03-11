@@ -2,10 +2,11 @@ import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync } from 'fs'
 import { v4 as uuidv4 } from 'uuid'
-import type { Agent, Message, TaskChain, Broadcast, CreateAgentParams, TeamStats } from '@shared/types'
+import type { Agent, Team, Message, TaskChain, Broadcast, CreateAgentParams, TeamStats } from '@shared/types'
 
 interface DBData {
   agents: Agent[]
+  teams: Team[]
   messages: Message[]
   taskChains: TaskChain[]
   broadcasts: Broadcast[]
@@ -33,6 +34,7 @@ export class Database {
     }
     return {
       agents: [],
+      teams: [],
       messages: [],
       taskChains: [],
       broadcasts: [],
@@ -66,6 +68,9 @@ export class Database {
       systemPrompt: params.systemPrompt ?? null,
       claudeSessionId: null,
       isPinned: false,
+      skills: params.skills ?? [],
+      teamId: params.teamId ?? null,
+      reportTo: params.reportTo ?? null,
       createdAt: now,
       updatedAt: now
     }
@@ -97,7 +102,7 @@ export class Database {
     const agent = this.data.agents.find((a) => a.id === id)
     if (!agent) throw new Error(`Agent ${id} not found`)
 
-    const allowedFields = ['name', 'icon', 'roleLabel', 'status', 'currentTask', 'systemPrompt', 'claudeSessionId', 'isPinned']
+    const allowedFields = ['name', 'icon', 'roleLabel', 'status', 'currentTask', 'systemPrompt', 'claudeSessionId', 'isPinned', 'skills', 'teamId', 'reportTo']
     for (const [key, value] of Object.entries(updates)) {
       if (allowedFields.includes(key)) {
         (agent as Record<string, unknown>)[key] = value
@@ -180,6 +185,36 @@ export class Database {
       Object.assign(b, updates)
       this.save()
     }
+  }
+
+  // Teams
+  createTeam(name: string, color: string): Team {
+    const team: Team = { id: uuidv4(), name, color }
+    this.data.teams.push(team)
+    this.save()
+    return team
+  }
+
+  getTeams(): Team[] {
+    return this.data.teams
+  }
+
+  updateTeam(id: string, updates: Partial<Team>): Team {
+    const team = this.data.teams.find((t) => t.id === id)
+    if (!team) throw new Error(`Team ${id} not found`)
+    if (updates.name !== undefined) team.name = updates.name
+    if (updates.color !== undefined) team.color = updates.color
+    this.save()
+    return team
+  }
+
+  deleteTeam(id: string): void {
+    this.data.teams = this.data.teams.filter((t) => t.id !== id)
+    // Unassign agents from deleted team
+    for (const agent of this.data.agents) {
+      if (agent.teamId === id) agent.teamId = null
+    }
+    this.save()
   }
 
   // Team Stats
