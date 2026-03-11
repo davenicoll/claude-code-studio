@@ -166,11 +166,17 @@ export function App(): JSX.Element {
     }
     mql.addEventListener('change', handleSystemTheme)
 
+    // Periodic stats refresh (every 30s)
+    const statsInterval = setInterval(() => {
+      window.api.getTeamStats().then(setTeamStats)
+    }, 30000)
+
     return () => {
       unsubOutput()
       unsubStatus()
       unsubNotification()
       mql.removeEventListener('change', handleSystemTheme)
+      clearInterval(statsInterval)
     }
   }, [loadAgents, addMessage, updateAgentInList, setTeamStats])
 

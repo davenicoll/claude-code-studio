@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { getInitials } from '../lib/status'
-import { FolderOpen, Clock, Cpu, Link, Inbox, User } from 'lucide-react'
+import { FolderOpen, Clock, Cpu, Link, Inbox, User, FileText, RotateCw, Square, AlertCircle } from 'lucide-react'
+import { showToast } from './ToastContainer'
 import { TaskChainPanel } from './TaskChainPanel'
 import { InboxPanel } from './InboxPanel'
 import { AgentProfileView } from './AgentProfileView'
@@ -170,6 +171,67 @@ export function ContextPane(): JSX.Element {
             </div>
           ) : null
         })()}
+
+        {/* System Prompt Preview */}
+        {agent.systemPrompt && (
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center gap-2 text-xs mb-2">
+              <FileText size={14} className="text-muted-foreground" />
+              <span className="text-muted-foreground">{t('agent.systemPrompt', 'System Prompt')}:</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground bg-secondary/50 rounded p-2 line-clamp-4 font-mono">
+              {agent.systemPrompt}
+            </p>
+          </div>
+        )}
+
+        {/* Quick Actions */}
+        <div className="p-4 border-b border-border">
+          <div className="text-xs text-muted-foreground mb-2">{t('agent.actions.title', 'Actions')}:</div>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                try {
+                  await window.api.ptyInterrupt(agent.id)
+                } catch (err) {
+                  showToast(err instanceof Error ? err.message : String(err), 'error')
+                }
+              }}
+              className="flex items-center gap-1 px-2 py-1 text-[11px] rounded bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors"
+            >
+              <AlertCircle size={11} />
+              Interrupt
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  await window.api.ptyStop(agent.id)
+                  await window.api.ptyStart(agent.id)
+                  showToast('Agent restarted', 'success')
+                } catch (err) {
+                  showToast(err instanceof Error ? err.message : String(err), 'error')
+                }
+              }}
+              className="flex items-center gap-1 px-2 py-1 text-[11px] rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-colors"
+            >
+              <RotateCw size={11} />
+              Restart
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  await window.api.ptyStop(agent.id)
+                } catch (err) {
+                  showToast(err instanceof Error ? err.message : String(err), 'error')
+                }
+              }}
+              className="flex items-center gap-1 px-2 py-1 text-[11px] rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+            >
+              <Square size={11} />
+              Stop
+            </button>
+          </div>
+        </div>
 
         {/* Session Meta */}
         <div className="p-4 space-y-2">

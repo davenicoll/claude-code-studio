@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
-import { X, FolderOpen, Server, Upload } from 'lucide-react'
+import { X, FolderOpen, Server, Upload, ChevronDown, ChevronRight } from 'lucide-react'
 import { showToast } from './ToastContainer'
 import type { DiscoveredWorkspace, Workspace } from '@shared/types'
 
@@ -23,6 +23,7 @@ export function CreateAgentDialog({ onClose, prefill }: CreateAgentDialogProps):
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null)
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const activeAgents = agents.filter((a) => a.status !== 'archived')
 
   // Load active workspace info
@@ -178,52 +179,65 @@ export function CreateAgentDialog({ onClose, prefill }: CreateAgentDialogProps):
             />
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{t('agent.role')}</label>
-            <input
-              type="text"
-              value={roleLabel}
-              onChange={(e) => setRoleLabel(e.target.value)}
-              placeholder="frontend / backend / test"
-              className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
-            />
-          </div>
+          {/* Advanced Options (collapsed by default) */}
+          <button
+            onClick={() => setShowAdvanced((v) => !v)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showAdvanced ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+            {t('agent.advanced', 'Advanced Options')}
+          </button>
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{t('agent.skills')}</label>
-            <input
-              type="text"
-              value={skillsInput}
-              onChange={(e) => setSkillsInput(e.target.value)}
-              placeholder={t('agent.skillsPlaceholder')}
-              className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
-            />
-          </div>
+          {showAdvanced && (
+            <div className="space-y-4 pl-2 border-l-2 border-border/50">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">{t('agent.role')}</label>
+                <input
+                  type="text"
+                  value={roleLabel}
+                  onChange={(e) => setRoleLabel(e.target.value)}
+                  placeholder="frontend / backend / test"
+                  className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
+                />
+              </div>
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{t('agent.reportsTo')}</label>
-            <select
-              value={reportTo}
-              onChange={(e) => setReportTo(e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
-            >
-              <option value="">— {t('agent.noTeam')} —</option>
-              {activeAgents.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}{a.roleLabel ? ` (${a.roleLabel})` : ''}</option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">{t('agent.skills')}</label>
+                <input
+                  type="text"
+                  value={skillsInput}
+                  onChange={(e) => setSkillsInput(e.target.value)}
+                  placeholder={t('agent.skillsPlaceholder')}
+                  className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
+                />
+              </div>
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{t('agent.systemPrompt')}</label>
-            <textarea
-              value={systemPrompt}
-              onChange={(e) => setSystemPrompt(e.target.value)}
-              placeholder="Optional: Define the agent's role..."
-              rows={3}
-              className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none resize-none"
-            />
-          </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">{t('agent.reportsTo')}</label>
+                <select
+                  value={reportTo}
+                  onChange={(e) => setReportTo(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
+                >
+                  <option value="">— {t('agent.noTeam')} —</option>
+                  {activeAgents.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}{a.roleLabel ? ` (${a.roleLabel})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">{t('agent.systemPrompt')}</label>
+                <textarea
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  placeholder="Optional: Define the agent's role..."
+                  rows={3}
+                  className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none resize-none"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {error && (

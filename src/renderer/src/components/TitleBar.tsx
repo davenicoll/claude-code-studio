@@ -15,7 +15,7 @@ import {
 
 export function TitleBar(): JSX.Element {
   const { t } = useTranslation()
-  const { toggleDashboard, toggleRightPane, toggleBroadcast, showDashboard, paneLayout, setPaneLayout } = useAppStore()
+  const { toggleDashboard, toggleRightPane, toggleBroadcast, showDashboard, paneLayout, setPaneLayout, teamStats } = useAppStore()
   const [showSettings, setShowSettings] = useState(false)
 
   const layoutOptions: { layout: 1 | 2 | 4; icon: typeof Square; label: string }[] = [
@@ -30,6 +30,17 @@ export function TitleBar(): JSX.Element {
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-primary" />
           <span className="text-sm font-semibold">{t('app.title')}</span>
+          {teamStats.total > 0 && (
+            <div className="flex items-center gap-1.5 ml-2 text-[10px]">
+              <span className="px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-500">{teamStats.active} active</span>
+              {teamStats.error > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-500">{teamStats.error} err</span>
+              )}
+              {teamStats.awaiting > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-500">{teamStats.awaiting} wait</span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
