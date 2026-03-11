@@ -200,6 +200,11 @@
     "empty": "No agents running",
     "needsAttention": "Needs attention"
   },
+  "sidebar": {
+    "inbox": "Inbox",
+    "workspaces": "Workspaces",
+    "attention": "{{count}} needs attention"
+  },
   "common": {
     "create": "Create",
     "cancel": "Cancel",
@@ -211,5 +216,17 @@
     "confirm": "Confirm",
     "approve": "Approve",
     "reject": "Reject"
+  },
+  "terminal": {
+    "action": {
+      "reading": "Reading",
+      "editing": "Editing",
+      "creating": "Creating",
+      "running": "Running",
+      "searchingFiles": "Searching files",
+      "searchingContent": "Searching content",
+      "subAgent": "Spawning sub-agent",
+      "tool": "Tool"
+    }
   }
 }

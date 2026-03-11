@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { showToast } from './ToastContainer'
@@ -11,9 +11,247 @@ import {
   ChevronRight,
   Terminal,
   AlertCircle,
-  X
+  X,
+  FileText,
+  Pencil,
+  FilePlus,
+  Search,
+  Bot,
+  Zap,
+  Brain
 } from 'lucide-react'
+import { ChangedFilesPanel } from './ChangedFilesPanel'
 import type { Message } from '@shared/types'
+
+// ---------------------------------------------------------------------------
+// Tool action parsing
+// ---------------------------------------------------------------------------
+
+interface ToolAction {
+  toolName: string
+  icon: typeof FileText
+  label: string
+  detail: string
+  colorClass: string
+}
+
+function extractToolName(firstLine: string): string | null {
+  const match = firstLine.match(/^\[([A-Za-z_]+)\]/)
+  return match ? match[1] : null
+}
+
+function extractFilePath(body: string): string | null {
+  // Try JSON-style "file_path": "..." or "path": "..."
+  const jsonMatch = body.match(/"(?:file_path|path|file)":\s*"([^"]+)"/)
+  if (jsonMatch) return jsonMatch[1]
+  // Try plain path-like token on first non-empty body line
+  const lines = body.split('\n').filter((l) => l.trim())
+  if (lines.length > 0) {
+    const pathMatch = lines[0].match(/([A-Za-z]:)?[/\\][\w/\\.@_-]+/)
+    if (pathMatch) return pathMatch[0]
+  }
+  return null
+}
+
+function extractCommand(body: string): string | null {
+  const jsonMatch = body.match(/"command":\s*"([^"]+)"/)
+  if (jsonMatch) return jsonMatch[1]
+  const lines = body.split('\n').filter((l) => l.trim())
+  return lines.length > 0 ? lines[0].slice(0, 80) : null
+}
+
+function shortenPath(filePath: string): string {
+  const parts = filePath.replace(/\\/g, '/').split('/')
+  if (parts.length <= 3) return parts.join('/')
+  return '.../' + parts.slice(-2).join('/')
+}
+
+function parseToolAction(content: string): ToolAction | null {
+  const lines = content.split('\n')
+  const firstLine = lines[0] || ''
+  const body = lines.slice(1).join('\n')
+  const toolName = extractToolName(firstLine)
+
+  if (!toolName && !firstLine) return null
+
+  const name = toolName || firstLine.trim()
+  const lowerName = name.toLowerCase()
+
+  if (lowerName === 'read' || lowerName.includes('read')) {
+    const fp = extractFilePath(body)
+    return {
+      toolName: 'Read',
+      icon: FileText,
+      label: 'terminal.action.reading',
+      detail: fp ? shortenPath(fp) : '',
+      colorClass: 'text-sky-500 dark:text-sky-400'
+    }
+  }
+
+  if (lowerName === 'edit') {
+    const fp = extractFilePath(body)
+    return {
+      toolName: 'Edit',
+      icon: Pencil,
+      label: 'terminal.action.editing',
+      detail: fp ? shortenPath(fp) : '',
+      colorClass: 'text-amber-500 dark:text-amber-400'
+    }
+  }
+
+  if (lowerName === 'write') {
+    const fp = extractFilePath(body)
+    return {
+      toolName: 'Write',
+      icon: FilePlus,
+      label: 'terminal.action.creating',
+      detail: fp ? shortenPath(fp) : '',
+      colorClass: 'text-emerald-500 dark:text-emerald-400'
+    }
+  }
+
+  if (lowerName === 'bash') {
+    const cmd = extractCommand(body)
+    return {
+      toolName: 'Bash',
+      icon: Terminal,
+      label: 'terminal.action.running',
+      detail: cmd ? cmd.slice(0, 60) + (cmd.length > 60 ? '...' : '') : '',
+      colorClass: 'text-violet-500 dark:text-violet-400'
+    }
+  }
+
+  if (lowerName === 'glob') {
+    return {
+      toolName: 'Glob',
+      icon: Search,
+      label: 'terminal.action.searchingFiles',
+      detail: '',
+      colorClass: 'text-cyan-500 dark:text-cyan-400'
+    }
+  }
+
+  if (lowerName === 'grep') {
+    return {
+      toolName: 'Grep',
+      icon: Search,
+      label: 'terminal.action.searchingContent',
+      detail: '',
+      colorClass: 'text-cyan-500 dark:text-cyan-400'
+    }
+  }
+
+  if (lowerName === 'agent') {
+    return {
+      toolName: 'Agent',
+      icon: Bot,
+      label: 'terminal.action.subAgent',
+      detail: '',
+      colorClass: 'text-purple-500 dark:text-purple-400'
+    }
+  }
+
+  // Fallback for any other tool
+  return {
+    toolName: name,
+    icon: Zap,
+    label: 'terminal.action.tool',
+    detail: name,
+    colorClass: 'text-orange-500 dark:text-orange-400'
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ActionSummary — compact colored line for a tool action
+// ---------------------------------------------------------------------------
+
+function ActionSummary({
+  action,
+  expanded,
+  onToggle,
+  time
+}: {
+  action: ToolAction
+  expanded: boolean
+  onToggle: () => void
+  time: string
+}): JSX.Element {
+  const { t } = useTranslation()
+  const Icon = action.icon
+
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        'flex items-center gap-1.5 text-[11px] hover:opacity-80 transition-opacity w-full text-left',
+        action.colorClass
+      )}
+    >
+      <span className="text-muted-foreground/40 mr-0.5 select-none shrink-0">{time}</span>
+      <Icon size={12} className="shrink-0" />
+      <span className="font-medium shrink-0">{t(action.label)}</span>
+      {action.detail && (
+        <span className="font-mono text-[10px] opacity-75 truncate">{action.detail}</span>
+      )}
+      <ChevronRight
+        size={10}
+        className={cn('ml-auto shrink-0 transition-transform opacity-50', expanded && 'rotate-90')}
+      />
+    </button>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// CurrentActionBar — persistent status bar showing latest action
+// ---------------------------------------------------------------------------
+
+function CurrentActionBar({ messages }: { messages: Message[] }): JSX.Element | null {
+  const { t } = useTranslation()
+
+  const currentAction = useMemo(() => {
+    // Walk backwards to find latest tool/thinking message
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i]
+
+      // Check for thinking status
+      if (msg.role === 'agent' && msg.contentType === 'text') {
+        // If the latest agent message exists, the agent is done or responding
+        return null
+      }
+
+      if (msg.role === 'tool' || msg.contentType === 'tool_exec') {
+        const action = parseToolAction(msg.content)
+        if (action) return action
+      }
+    }
+    return null
+  }, [messages])
+
+  if (!currentAction) return null
+
+  const Icon = currentAction.icon
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1.5 px-3 py-1 border-b border-border/50 text-[11px]',
+        'bg-card/60 backdrop-blur-sm',
+        currentAction.colorClass
+      )}
+    >
+      <Brain size={11} className="text-muted-foreground/60 shrink-0 animate-pulse" />
+      <Icon size={11} className="shrink-0" />
+      <span className="font-medium shrink-0">{t(currentAction.label)}</span>
+      {currentAction.detail && (
+        <span className="font-mono text-[10px] opacity-75 truncate">{currentAction.detail}</span>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// TerminalLine
+// ---------------------------------------------------------------------------
 
 interface TerminalViewProps {
   agentId: string
@@ -67,11 +305,33 @@ function TerminalLine({ message }: { message: Message }): JSX.Element {
     )
   }
 
-  // Tool execution — collapsible
+  // Tool execution — action summary + collapsible details
   if (isTool || isToolExec) {
     const lines = message.content.split('\n')
     const header = lines[0] || 'Tool'
     const body = lines.slice(1).join('\n')
+    const action = parseToolAction(message.content)
+
+    // If we successfully parsed an action, show the enhanced summary
+    if (action) {
+      return (
+        <div className="py-0.5">
+          <ActionSummary
+            action={action}
+            expanded={expanded}
+            onToggle={() => setExpanded(!expanded)}
+            time={time}
+          />
+          {expanded && body && (
+            <pre className="ml-[72px] text-[10px] text-muted-foreground whitespace-pre-wrap break-words max-h-48 overflow-y-auto py-1 border-l-2 border-border/30 pl-2 mt-0.5">
+              {body}
+            </pre>
+          )}
+        </div>
+      )
+    }
+
+    // Fallback: original collapsible behavior for unrecognized tool formats
     const isLong = body.length > 150
 
     return (
@@ -123,6 +383,10 @@ function TerminalLine({ message }: { message: Message }): JSX.Element {
     </div>
   )
 }
+
+// ---------------------------------------------------------------------------
+// TerminalView
+// ---------------------------------------------------------------------------
 
 export function TerminalView({ agentId, onClose, compact }: TerminalViewProps): JSX.Element {
   const { t } = useTranslation()
@@ -236,6 +500,11 @@ export function TerminalView({ agentId, onClose, compact }: TerminalViewProps): 
         </div>
       </div>
 
+      {/* Current Action Status Bar */}
+      {agent.status === 'tool_running' && (
+        <CurrentActionBar messages={agentMessages} />
+      )}
+
       {/* Terminal Output */}
       <div
         ref={scrollRef}
@@ -254,6 +523,9 @@ export function TerminalView({ agentId, onClose, compact }: TerminalViewProps): 
           ))
         )}
       </div>
+
+      {/* Changed Files */}
+      {!compact && <ChangedFilesPanel agentId={agentId} />}
 
       {/* Input */}
       <div className={cn(

@@ -200,6 +200,11 @@
     "empty": "稼働中のエージェントなし",
     "needsAttention": "対応が必要"
   },
+  "sidebar": {
+    "inbox": "受信箱",
+    "workspaces": "ワークスペース",
+    "attention": "{{count}}件の対応が必要"
+  },
   "common": {
     "create": "作成",
     "cancel": "キャンセル",
@@ -211,5 +216,17 @@
     "confirm": "確認",
     "approve": "承認",
     "reject": "拒否"
+  },
+  "terminal": {
+    "action": {
+      "reading": "読み取り中",
+      "editing": "編集中",
+      "creating": "作成中",
+      "running": "実行中",
+      "searchingFiles": "ファイル検索中",
+      "searchingContent": "コンテンツ検索中",
+      "subAgent": "サブエージェント起動",
+      "tool": "ツール"
+    }
   }
 }
