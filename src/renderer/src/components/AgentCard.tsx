@@ -1,20 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Agent, AgentStatus } from '@shared/types'
+import type { Agent } from '@shared/types'
 import { useAppStore } from '../stores/useAppStore'
 import { cn } from '../lib/utils'
+import { getStatusDot, getInitials } from '../lib/status'
 import { Pin, PinOff, RotateCw, Archive } from 'lucide-react'
-
-const statusColors: Record<AgentStatus, string> = {
-  creating: 'bg-gray-400',
-  active: 'bg-green-500',
-  thinking: 'bg-blue-500 animate-pulse',
-  tool_running: 'bg-yellow-500',
-  awaiting: 'bg-orange-500',
-  error: 'bg-red-500',
-  idle: 'bg-gray-400',
-  archived: 'bg-gray-300'
-}
 
 interface AgentCardProps {
   agent: Agent
@@ -28,12 +18,7 @@ export function AgentCard({ agent, isSelected, onClick }: AgentCardProps): JSX.E
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const initials = agent.name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+  const initials = getInitials(agent.name)
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault()
@@ -86,7 +71,7 @@ export function AgentCard({ agent, isSelected, onClick }: AgentCardProps): JSX.E
           <div
             className={cn(
               'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card',
-              statusColors[agent.status]
+              getStatusDot(agent.status)
             )}
           />
         </div>

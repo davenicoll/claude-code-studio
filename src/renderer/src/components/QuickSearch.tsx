@@ -1,20 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
-import type { Agent, AgentStatus } from '@shared/types'
+import type { Agent } from '@shared/types'
 import { cn } from '../lib/utils'
+import { getStatusDot, getInitials } from '../lib/status'
 import { Search } from 'lucide-react'
-
-const statusColors: Record<AgentStatus, string> = {
-  creating: 'bg-gray-400',
-  active: 'bg-green-500',
-  thinking: 'bg-blue-500',
-  tool_running: 'bg-yellow-500',
-  awaiting: 'bg-orange-500',
-  error: 'bg-red-500',
-  idle: 'bg-gray-400',
-  archived: 'bg-gray-300'
-}
 
 export function QuickSearch(): JSX.Element | null {
   const { t } = useTranslation()
@@ -120,9 +110,9 @@ export function QuickSearch(): JSX.Element | null {
               >
                 <div className="relative flex-shrink-0">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                    {agent.name.slice(0, 2).toUpperCase()}
+                    {getInitials(agent.name)}
                   </div>
-                  <div className={cn('absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card', statusColors[agent.status])} />
+                  <div className={cn('absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card', getStatusDot(agent.status))} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium">{agent.name}</div>

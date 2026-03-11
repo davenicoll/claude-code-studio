@@ -2,21 +2,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { cn } from '../lib/utils'
+import { getStatusDot } from '../lib/status'
 import { Users, AlertCircle, XCircle, CheckCircle2, FileText } from 'lucide-react'
 import { ActivityLog } from './ActivityLog'
 import { DailyReport } from './DailyReport'
-import type { AgentStatus } from '@shared/types'
-
-const statusColors: Record<AgentStatus, string> = {
-  creating: 'border-gray-400',
-  active: 'border-green-500',
-  thinking: 'border-blue-500',
-  tool_running: 'border-yellow-500',
-  awaiting: 'border-orange-500',
-  error: 'border-red-500',
-  idle: 'border-gray-400',
-  archived: 'border-gray-300'
-}
 
 export function Dashboard(): JSX.Element {
   const { t } = useTranslation()
@@ -79,13 +68,11 @@ export function Dashboard(): JSX.Element {
           <button
             key={agent.id}
             onClick={() => handleAgentClick(agent.id)}
-            className={cn(
-              'bg-secondary rounded-lg p-3 text-left border-l-4 hover:bg-accent/50 transition-colors',
-              statusColors[agent.status]
-            )}
+            className="bg-secondary rounded-lg p-3 text-left hover:bg-accent/50 transition-colors relative overflow-hidden"
           >
+            <div className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-l', getStatusDot(agent.status))} />
             <div className="text-sm font-medium truncate">{agent.name}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">
+            <div className="text-[11px] text-muted-foreground mt-0.5">
               {t(`agent.status.${agent.status}`)}
             </div>
             {agent.currentTask && (

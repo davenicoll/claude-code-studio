@@ -55,6 +55,9 @@
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     -webkit-app-region: no-drag;
   }
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-1 ring-offset-background;
+  }
 }
 
 /* Titlebar drag region */

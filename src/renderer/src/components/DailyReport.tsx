@@ -32,6 +32,14 @@ export function DailyReport({ onClose }: DailyReportProps): JSX.Element {
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  useEffect(() => {
+    const handler = (e: globalThis.KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
   const today = useMemo(() => {
     const d = new Date()
     return d.toISOString().split('T')[0]
@@ -208,8 +216,8 @@ export function DailyReport({ onClose }: DailyReportProps): JSX.Element {
   }, [generateMarkdown])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-card border border-border rounded-xl w-[640px] max-h-[85vh] overflow-hidden shadow-xl flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="bg-card border border-border rounded-xl w-[640px] max-h-[85vh] overflow-hidden shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">

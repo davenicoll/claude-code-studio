@@ -2,7 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { MessageBubble } from './MessageBubble'
+import { showToast } from './ToastContainer'
 import { cn } from '../lib/utils'
+import { getStatusBadge, getInitials } from '../lib/status'
 import {
   Send,
   RotateCw,
@@ -50,7 +52,11 @@ export function ChatArea(): JSX.Element {
       createdAt: new Date().toISOString()
     })
 
-    await window.api.sendMessage(selectedAgentId, content)
+    try {
+      await window.api.sendMessage(selectedAgentId, content)
+    } catch (err) {
+      showToast('Send Failed', err instanceof Error ? err.message : 'Failed to send message', 'error')
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
@@ -74,18 +80,14 @@ export function ChatArea(): JSX.Element {
       <div className="flex items-center justify-between p-3 border-b border-border bg-card">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-            {agent.name.slice(0, 2).toUpperCase()}
+            {getInitials(agent.name)}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">{agent.name} #{agent.sessionNumber}</span>
               <span className={cn(
-                'text-[10px] px-1.5 py-0.5 rounded',
-                agent.status === 'active' && 'bg-green-500/20 text-green-400',
-                agent.status === 'thinking' && 'bg-blue-500/20 text-blue-400',
-                agent.status === 'tool_running' && 'bg-yellow-500/20 text-yellow-400',
-                agent.status === 'awaiting' && 'bg-orange-500/20 text-orange-400',
-                agent.status === 'error' && 'bg-red-500/20 text-red-400'
+                'text-[11px] px-1.5 py-0.5 rounded',
+                getStatusBadge(agent.status)
               )}>
                 {t(`agent.status.${agent.status}`)}
               </span>
@@ -132,7 +134,13 @@ export function ChatArea(): JSX.Element {
         <div className="flex items-end gap-2">
           <textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value)
+              // Auto-resize
+              const el = e.target
+              el.style.height = 'auto'
+              el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+            }}
             onKeyDown={handleKeyDown}
             placeholder={t('chat.placeholder')}
             rows={1}

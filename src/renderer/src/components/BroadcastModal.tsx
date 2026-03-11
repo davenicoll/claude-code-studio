@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { X, Radio } from 'lucide-react'
@@ -9,6 +9,16 @@ export function BroadcastModal(): JSX.Element | null {
   const [message, setMessage] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [sending, setSending] = useState(false)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') toggleBroadcast()
+    }
+    if (showBroadcast) {
+      window.addEventListener('keydown', handler)
+    }
+    return () => window.removeEventListener('keydown', handler)
+  }, [showBroadcast, toggleBroadcast])
 
   if (!showBroadcast) return null
 
@@ -44,8 +54,8 @@ export function BroadcastModal(): JSX.Element | null {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-card border border-border rounded-xl w-[560px] max-h-[80vh] overflow-hidden shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={toggleBroadcast} role="dialog" aria-modal="true">
+      <div className="bg-card border border-border rounded-xl w-[560px] max-h-[80vh] overflow-hidden shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Radio size={18} className="text-primary" />

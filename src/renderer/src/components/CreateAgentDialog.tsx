@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { X, FolderOpen } from 'lucide-react'
@@ -17,6 +17,14 @@ export function CreateAgentDialog({ onClose }: CreateAgentDialogProps): JSX.Elem
   const [systemPrompt, setSystemPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
 
   const handleSelectFolder = async (): Promise<void> => {
     const folder = await window.api.selectFolder()
@@ -54,8 +62,8 @@ export function CreateAgentDialog({ onClose }: CreateAgentDialogProps): JSX.Elem
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-card border border-border rounded-xl w-[480px] max-h-[90vh] overflow-y-auto shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="bg-card border border-border rounded-xl w-[480px] max-h-[90vh] overflow-y-auto shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-semibold">{t('agent.new')}</h3>
           <button onClick={onClose} className="p-1 rounded hover:bg-accent">

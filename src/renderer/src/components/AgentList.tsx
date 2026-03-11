@@ -60,6 +60,10 @@ export function AgentList(): JSX.Element {
           <div className="p-4 text-center text-sm text-muted-foreground">
             {t('agent.noAgents')}
           </div>
+        ) : Object.keys(grouped).length === 0 ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            No results for &ldquo;{search}&rdquo;
+          </div>
         ) : (
           Object.entries(grouped).map(([project, projectAgents]) => (
             <div key={project}>

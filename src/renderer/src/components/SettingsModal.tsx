@@ -12,6 +12,14 @@ export function SettingsModal({ onClose }: SettingsModalProps): JSX.Element {
   const { t, i18n } = useTranslation()
   const { theme, setTheme } = useAppStore()
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
   const [notifications, setNotifications] = useState(() => {
     const saved = localStorage.getItem('notifications')
     return saved ? JSON.parse(saved) : {
@@ -50,8 +58,8 @@ export function SettingsModal({ onClose }: SettingsModalProps): JSX.Element {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-card border border-border rounded-xl w-[480px] max-h-[80vh] overflow-hidden shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="bg-card border border-border rounded-xl w-[480px] max-h-[80vh] overflow-hidden shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-semibold">{t('settings.title')}</h3>
           <button onClick={onClose} className="p-1 rounded hover:bg-accent">

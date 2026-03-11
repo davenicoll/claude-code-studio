@@ -85,9 +85,9 @@ export function MessageBubble({ message }: MessageBubbleProps): JSX.Element {
                 key={i}
                 className={cn(
                   'block',
-                  line.startsWith('+') && 'text-green-400',
-                  line.startsWith('-') && 'text-red-400',
-                  line.startsWith('@@') && 'text-blue-400'
+                  line.startsWith('+') && 'text-green-700 dark:text-green-400 bg-green-500/10',
+                  line.startsWith('-') && 'text-red-700 dark:text-red-400 bg-red-500/10',
+                  line.startsWith('@@') && 'text-blue-700 dark:text-blue-400'
                 )}
               >
                 {line}

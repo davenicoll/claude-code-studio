@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
+import { getInitials } from '../lib/status'
 import { FolderOpen, Clock, Cpu, Link } from 'lucide-react'
 import { TaskChainPanel } from './TaskChainPanel'
 
@@ -71,7 +72,7 @@ export function ContextPane(): JSX.Element {
           <div className="p-4 border-b border-border">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-medium">
-                {agent.name.slice(0, 2).toUpperCase()}
+                {getInitials(agent.name)}
               </div>
               <div>
                 <div className="font-medium">{agent.name} #{agent.sessionNumber}</div>
