@@ -166,18 +166,96 @@ Workspace（Company-A / Personal / ...）
 3. **tmux integration** — セッション作成・アタッチ・デタッチ
 4. **xterm.js terminal** — メインエリアにリアルターミナル表示
 5. **LINE-style sidebar** — エージェント一覧、ステータス、最新メッセージプレビュー
+6. **Composer** — リッチテキスト入力エリア（音声入力・長文対応）
 
-### Phase 2: Management
+### Phase 2: Agent Context Visualization
 
-6. **Config visualization** — CLAUDE.md / MCP / hooks の閲覧・編集
-7. **Dashboard** — 全ワークスペース横断のステータス俯瞰
-8. **Broadcast** — 複数エージェントへの一括指示
+Claude Code のパワーユーザーは CLI 周辺に独自の運用体系を構築している。
+CLAUDE.md、Memory、Skills、Hooks、MCP など「エージェントの人格・記憶・能力」を
+定義するファイル群が散在しており、全貌が見えない。Phase 2 ではこれを可視化する。
+
+```
+[Claude Code エコシステムの構造]
+~/.claude/                          ← グローバル設定
+├── CLAUDE.md                       ← 全セッション共通ルール
+├── settings.json                   ← パーミッション、MCP
+├── commands/                       ← カスタムスラッシュコマンド
+├── skills/                         ← 再利用可能なスキル
+├── templates/                      ← テンプレート
+├── projects/<path>/memory/
+│   └── MEMORY.md                   ← セッション横断メモリ
+└── keybindings.json
+
+<project>/                          ← プロジェクト固有
+├── CLAUDE.md                       ← プロジェクトルール
+├── .claude/
+│   └── product-marketing-context.md
+└── AGENTS.md                       ← チーム構成定義
+```
+
+#### 6. Agent Profile View — エージェントの全体像
+
+エージェントを選択したときに「このエージェントが何者か」を一目で把握できるビュー。
+
+```
+┌─ Agent Profile: CPO ──────────────────────────────┐
+│                                                    │
+│ 📋 Rules (CLAUDE.md)                               │
+│  ├── Global: ~/.claude/CLAUDE.md (200 lines)       │
+│  └── Project: /my-project/CLAUDE.md (85 lines)     │
+│  [View] [Edit] [Diff between levels]               │
+│                                                    │
+│ 🧠 Memory                                          │
+│  └── MEMORY.md: 15 entries                         │
+│  Last updated: 2h ago                              │
+│  [View] [Search] [Edit]                            │
+│                                                    │
+│ ⚡ Skills & Commands                                │
+│  ├── Skills: 10 loaded (design-critique, ...)      │
+│  └── Commands: 16 available (/review-and-fix, ...) │
+│  [Browse] [Assign to agent]                        │
+│                                                    │
+│ 🔌 MCP Servers                                     │
+│  ├── 🟢 GitHub (connected, 12 tools)               │
+│  ├── 🟢 Supabase (connected, 8 tools)              │
+│  └── ⚪ Slack (not connected)                       │
+│  [Manage]                                          │
+│                                                    │
+│ 🛡 Guardrails                                      │
+│  ├── Hooks: 4 active (pre-commit lint, ...)        │
+│  ├── Permissions: bypassPermissions ON             │
+│  └── Settings: auto-approve tools                  │
+│  [View hook log] [Edit]                            │
+│                                                    │
+│ 📜 Session History                                  │
+│  ├── cpo-task-123 (3h ago, 45 messages)            │
+│  ├── cpo-task-122 (yesterday, 120 messages)        │
+│  └── ... 12 more sessions                          │
+│  [Resume] [Fork] [Browse]                          │
+│                                                    │
+└────────────────────────────────────────────────────┘
+```
+
+| Section | Data Source | 機能 |
+|---------|------------|------|
+| **Rules** | `~/.claude/CLAUDE.md` + `<project>/CLAUDE.md` | 階層表示、継承関係のツリー、差分ビュー、インライン編集 |
+| **Memory** | `~/.claude/projects/<path>/memory/MEMORY.md` + topic files | 全エントリ検索、トピック別閲覧、編集・削除 |
+| **Skills & Commands** | `~/.claude/skills/`, `~/.claude/commands/`, project skills | 一覧表示、エージェントへの紐付け、使用頻度 |
+| **MCP Servers** | `~/.claude/settings.json` の `mcpServers` | 接続状態、利用可能ツール一覧、ワークスペース単位の有効/無効 |
+| **Guardrails** | `settings.json`, hooks config, CLAUDE.md 内のガードレール | フック一覧、発火ログ、パーミッション状態のバッジ表示 |
+| **Session History** | `~/.claude/projects/<path>/` のセッションデータ | タイムライン表示、Resume/Fork ボタン、メッセージ数・期間 |
+
+#### 8. Dashboard — 全ワークスペース横断の俯瞰
+
+全ワークスペース・全エージェントのステータスを一画面で表示。
+
+#### 9. Broadcast — 複数エージェントへの一括指示
 
 ### Phase 3: Advanced
 
-9. **Task chains** — エージェント間の自動連携
-10. **Agent templates** — 役割・スキルのプリセット
-11. **Notification system** — 完了・エラー・承認待ちの通知
+10. **Task chains** — エージェント間の自動連携
+11. **Agent templates** — 役割・スキルのプリセット
+12. **Notification system** — 完了・エラー・承認待ちの通知
 
 ## Design Decisions (Resolved)
 
