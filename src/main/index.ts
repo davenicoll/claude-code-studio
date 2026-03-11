@@ -6,6 +6,7 @@ import { PtySessionManager } from './pty-session-manager'
 import { Database } from './database'
 import { ChainOrchestrator } from './chain-orchestrator'
 import { scanWorkspaces } from './workspace-scanner'
+import { readAgentProfile, readFileContent } from './claude-config-reader'
 import type { CreateAgentParams } from '@shared/types'
 
 let mainWindow: BrowserWindow | null = null
@@ -325,6 +326,23 @@ function setupIPC(): void {
       throw new Error('rootPath is required')
     }
     return scanWorkspaces(rootPath.trim())
+  })
+
+  // Agent Profile
+  ipcMain.handle('agent:profile', (_event, agentId: string) => {
+    if (typeof agentId !== 'string') throw new Error('Invalid agent ID')
+    const agent = database.getAgent(agentId)
+    if (!agent) throw new Error(`Agent ${agentId} not found`)
+    return readAgentProfile(agent.projectPath)
+  })
+
+  ipcMain.handle('agent:readFile', (_event, filePath: string) => {
+    if (typeof filePath !== 'string') throw new Error('Invalid file path')
+    // Security: only allow reading .md, .json, .yml files in claude config dirs
+    if (!/\.(md|json|yml|yaml|txt)$/i.test(filePath)) {
+      throw new Error('Only text/config files can be read')
+    }
+    return readFileContent(filePath)
   })
 
   // Settings

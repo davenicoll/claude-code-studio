@@ -105,6 +105,15 @@
   "contextPane": {
     "details": "Details"
   },
+  "profile": {
+    "tab": "Profile",
+    "title": "Agent Profile",
+    "rules": "Rules (CLAUDE.md)",
+    "memory": "Memory",
+    "skills": "Skills & Commands",
+    "mcp": "MCP Servers",
+    "hooks": "Guardrails & Hooks"
+  },
   "activity": {
     "title": "Activity Log",
     "empty": "No activity yet. Events will appear here as agents work.",

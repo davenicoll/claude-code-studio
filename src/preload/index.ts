@@ -93,6 +93,10 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener('pty:exit', handler)
   },
 
+  // Agent Profile
+  getAgentProfile: (agentId) => ipcRenderer.invoke('agent:profile', agentId),
+  readConfigFile: (filePath) => ipcRenderer.invoke('agent:readFile', filePath),
+
   // Settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
   updateSettings: (updates) => ipcRenderer.invoke('settings:update', updates),

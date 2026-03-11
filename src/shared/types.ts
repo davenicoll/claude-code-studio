@@ -135,6 +135,48 @@ export interface DiscoveredWorkspace {
   lastModified: string
 }
 
+export interface ClaudeRuleFile {
+  path: string
+  name: string
+  level: 'global' | 'project'
+  lineCount: number
+  sizeBytes: number
+  preview: string
+}
+
+export interface ClaudeMemoryEntry {
+  file: string
+  lineCount: number
+  lastModified: string
+  preview: string
+}
+
+export interface ClaudeSkillEntry {
+  name: string
+  path: string
+  type: 'skill' | 'command' | 'template'
+}
+
+export interface ClaudeMcpServer {
+  name: string
+  command: string
+  args: string[]
+  enabled: boolean
+}
+
+export interface ClaudeHook {
+  event: string
+  command: string
+}
+
+export interface AgentProfileData {
+  rules: ClaudeRuleFile[]
+  memory: ClaudeMemoryEntry[]
+  skills: ClaudeSkillEntry[]
+  mcpServers: ClaudeMcpServer[]
+  hooks: ClaudeHook[]
+}
+
 export interface AppSettings {
   usePtyMode: boolean
 }
@@ -200,6 +242,10 @@ export interface ElectronAPI {
   ptyLastOutput: (agentId: string) => Promise<string>
   onPtyData: (callback: (agentId: string, data: string) => void) => () => void
   onPtyExit: (callback: (agentId: string, exitCode: number) => void) => () => void
+
+  // Agent Profile
+  getAgentProfile: (agentId: string) => Promise<AgentProfileData>
+  readConfigFile: (filePath: string) => Promise<string>
 
   // Settings
   getSettings: () => Promise<AppSettings>

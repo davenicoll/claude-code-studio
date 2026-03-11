@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { getInitials } from '../lib/status'
-import { FolderOpen, Clock, Cpu, Link, Inbox } from 'lucide-react'
+import { FolderOpen, Clock, Cpu, Link, Inbox, User } from 'lucide-react'
 import { TaskChainPanel } from './TaskChainPanel'
 import { InboxPanel } from './InboxPanel'
+import { AgentProfileView } from './AgentProfileView'
 
-type ContextTab = 'details' | 'inbox' | 'chains'
+type ContextTab = 'details' | 'profile' | 'inbox' | 'chains'
 
 export function ContextPane(): JSX.Element {
   const { t } = useTranslation()
@@ -27,6 +28,10 @@ export function ContextPane(): JSX.Element {
       <button onClick={() => setActiveTab('details')} className={tabClass('details')}>
         {t('contextPane.details')}
       </button>
+      <button onClick={() => setActiveTab('profile')} className={tabClass('profile')}>
+        <User size={12} />
+        {t('profile.tab', 'Profile')}
+      </button>
       <button onClick={() => setActiveTab('inbox')} className={tabClass('inbox')}>
         <Inbox size={12} />
         {t('inbox.title')}
@@ -37,6 +42,25 @@ export function ContextPane(): JSX.Element {
       </button>
     </div>
   )
+
+  if (activeTab === 'profile') {
+    return (
+      <div className="w-80 border-l border-border bg-card flex flex-col overflow-hidden">
+        {renderTabs()}
+        {agent ? (
+          <AgentProfileView
+            agentId={agent.id}
+            agentName={agent.name}
+            onClose={() => setActiveTab('details')}
+          />
+        ) : (
+          <div className="p-4 text-sm text-muted-foreground">
+            {t('chat.selectAgent')}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   if (activeTab === 'inbox') {
     return (

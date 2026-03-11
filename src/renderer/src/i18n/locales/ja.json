@@ -105,6 +105,15 @@
   "contextPane": {
     "details": "詳細"
   },
+  "profile": {
+    "tab": "プロフィール",
+    "title": "エージェントプロフィール",
+    "rules": "ルール (CLAUDE.md)",
+    "memory": "メモリ",
+    "skills": "スキル & コマンド",
+    "mcp": "MCP サーバー",
+    "hooks": "ガードレール & フック"
+  },
   "activity": {
     "title": "アクティビティログ",
     "empty": "アクティビティはまだありません。エージェントが稼働すると表示されます。",
