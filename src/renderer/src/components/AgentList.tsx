@@ -249,7 +249,7 @@ export function AgentList(): JSX.Element {
   }
 
   return (
-    <div className="flex flex-col w-64 min-w-[220px] max-w-[320px] border-r border-border bg-card resize-x overflow-hidden" role="navigation" aria-label="Agent sidebar">
+    <div className="flex flex-col h-full border-r border-border bg-card overflow-hidden" role="navigation" aria-label="Agent sidebar">
       {/* Workspace Switcher */}
       <div className="p-2 border-b border-border">
         <WorkspaceSwitcher />

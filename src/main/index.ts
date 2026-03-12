@@ -41,7 +41,8 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true,
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      webviewTag: true
     }
   })
 
@@ -745,5 +746,10 @@ function setupPtyIPC(): void {
       return sshSessionManager.getLastOutputLine(agentId)
     }
     return ptySessionManager.getLastOutputLine(agentId)
+  })
+
+  ipcMain.handle('pty:scrollback', (_event, agentId: string) => {
+    if (typeof agentId !== 'string') throw new Error('Invalid agentId')
+    return ptySessionManager.getScrollback(agentId)
   })
 }

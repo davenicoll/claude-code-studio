@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { getInitials } from '../lib/status'
-import { FolderOpen, Clock, Cpu, Link, Inbox, User, FileText, RotateCw, Square, AlertCircle } from 'lucide-react'
+import { FolderOpen, Clock, Cpu, Link, Inbox, User, FileText, RotateCw, Square, AlertCircle, Globe } from 'lucide-react'
 import { showToast } from './ToastContainer'
 import { TaskChainPanel } from './TaskChainPanel'
 import { InboxPanel } from './InboxPanel'
 import { AgentProfileView } from './AgentProfileView'
+import { BrowserPanel } from './BrowserPanel'
 
-type ContextTab = 'details' | 'profile' | 'inbox' | 'chains'
+type ContextTab = 'details' | 'profile' | 'inbox' | 'chains' | 'browser'
 
 export function ContextPane(): JSX.Element {
   const { t } = useTranslation()
@@ -41,12 +42,16 @@ export function ContextPane(): JSX.Element {
         <Link size={12} />
         {t('chain.title')}
       </button>
+      <button onClick={() => setActiveTab('browser')} className={tabClass('browser')}>
+        <Globe size={12} />
+        Browser
+      </button>
     </div>
   )
 
   if (activeTab === 'profile') {
     return (
-      <div className="w-80 border-l border-border bg-card flex flex-col overflow-hidden">
+      <div className="h-full border-l border-border bg-card flex flex-col overflow-hidden">
         {renderTabs()}
         {agent ? (
           <AgentProfileView
@@ -65,7 +70,7 @@ export function ContextPane(): JSX.Element {
 
   if (activeTab === 'inbox') {
     return (
-      <div className="w-80 border-l border-border bg-card flex flex-col overflow-hidden">
+      <div className="h-full border-l border-border bg-card flex flex-col overflow-hidden">
         {renderTabs()}
         <InboxPanel onSelectAgent={setSelectedAgent} />
       </div>
@@ -74,16 +79,25 @@ export function ContextPane(): JSX.Element {
 
   if (activeTab === 'chains') {
     return (
-      <div className="w-80 border-l border-border bg-card flex flex-col overflow-hidden">
+      <div className="h-full border-l border-border bg-card flex flex-col overflow-hidden">
         {renderTabs()}
         <TaskChainPanel />
       </div>
     )
   }
 
+  if (activeTab === 'browser') {
+    return (
+      <div className="h-full border-l border-border bg-card flex flex-col overflow-hidden">
+        {renderTabs()}
+        <BrowserPanel />
+      </div>
+    )
+  }
+
   if (!agent) {
     return (
-      <div className="w-80 border-l border-border bg-card flex flex-col">
+      <div className="h-full border-l border-border bg-card flex flex-col">
         {renderTabs()}
         <div className="p-4 text-sm text-muted-foreground">
           {t('chat.selectAgent')}
@@ -93,7 +107,7 @@ export function ContextPane(): JSX.Element {
   }
 
   return (
-    <div className="w-80 border-l border-border bg-card flex flex-col overflow-hidden">
+    <div className="h-full border-l border-border bg-card flex flex-col overflow-hidden">
       {renderTabs()}
       <div className="flex-1 overflow-y-auto">
         {/* Agent Profile */}

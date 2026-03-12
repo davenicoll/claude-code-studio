@@ -251,6 +251,7 @@ export interface ElectronAPI {
   ptyInterrupt: (agentId: string) => Promise<void>
   ptyStop: (agentId: string) => Promise<void>
   ptyLastOutput: (agentId: string) => Promise<string>
+  ptyGetScrollback: (agentId: string) => Promise<string>
   onPtyData: (callback: (agentId: string, data: string) => void) => () => void
   onPtyExit: (callback: (agentId: string, exitCode: number) => void) => () => void
 

@@ -78,6 +78,7 @@ const api: ElectronAPI = {
   ptyInterrupt: (agentId) => ipcRenderer.invoke('pty:interrupt', agentId),
   ptyStop: (agentId) => ipcRenderer.invoke('pty:stop', agentId),
   ptyLastOutput: (agentId) => ipcRenderer.invoke('pty:lastOutput', agentId),
+  ptyGetScrollback: (agentId) => ipcRenderer.invoke('pty:scrollback', agentId),
   onPtyData: (callback) => {
     const handler = (_event: Electron.IpcRendererEvent, agentId: string, data: string): void => {
       callback(agentId, data)

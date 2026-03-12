@@ -102,6 +102,15 @@ export function XtermTerminal({ agentId, theme = 'dark', fontSize = 13 }: XtermT
       fitAddon.fit()
     })
 
+    // Restore scrollback from previous session
+    window.api.ptyGetScrollback(agentId).then((scrollback) => {
+      if (scrollback && terminal.element) {
+        terminal.write(scrollback)
+      }
+    }).catch(() => {
+      // Ignore scrollback restore errors
+    })
+
     // Forward keyboard input to PTY
     terminal.onData((data) => {
       window.api.ptyWrite(agentId, data)

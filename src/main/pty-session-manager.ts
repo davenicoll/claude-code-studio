@@ -12,6 +12,7 @@ interface PtySession {
   pty: pty.IPty
   sessionId: string
   outputBuffer: string
+  scrollbackBuffer: string
   lastStatus: AgentStatus
   lastOutputLine: string
 }
@@ -100,12 +101,15 @@ export class PtySessionManager {
       pty: ptyProcess,
       sessionId,
       outputBuffer: '',
+      scrollbackBuffer: this.database.getScrollback(agent.id),
       lastStatus: 'active',
       lastOutputLine: ''
     }
 
     ptyProcess.onData((data: string) => {
       this.onData(agent.id, data)
+      // Accumulate scrollback (max 50KB)
+      session.scrollbackBuffer = (session.scrollbackBuffer + data).slice(-50000)
       this.detectAndUpdateStatus(session, data)
     })
 
@@ -149,6 +153,13 @@ export class PtySessionManager {
   }
 
   stopAll(): void {
+    // Save all scrollbacks before stopping
+    const scrollbacks: Record<string, string> = {}
+    for (const [id, session] of this.sessions) {
+      scrollbacks[id] = session.scrollbackBuffer
+    }
+    this.database.saveAllScrollbacks(scrollbacks)
+
     for (const [id] of this.sessions) {
       this.stopSession(id)
     }
@@ -160,6 +171,12 @@ export class PtySessionManager {
 
   getLastOutputLine(agentId: string): string {
     return this.sessions.get(agentId)?.lastOutputLine ?? ''
+  }
+
+  getScrollback(agentId: string): string {
+    const session = this.sessions.get(agentId)
+    if (session) return session.scrollbackBuffer
+    return this.database.getScrollback(agentId)
   }
 
   private detectAndUpdateStatus(session: PtySession, rawData: string): void {

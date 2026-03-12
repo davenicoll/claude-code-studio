@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from 'react'
+import { Group, Panel } from 'react-resizable-panels'
 import { useAppStore } from './stores/useAppStore'
 import { TitleBar } from './components/TitleBar'
 import { AgentList } from './components/AgentList'
@@ -14,7 +15,8 @@ import { ShortcutHelp } from './components/ShortcutHelp'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { WorkspaceScanner } from './components/WorkspaceScanner'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { cn } from './lib/utils'
+import { ResizeHandle } from './components/ResizeHandle'
+
 import type { DiscoveredWorkspace } from '@shared/types'
 
 function PaneGrid(): JSX.Element {
@@ -50,51 +52,85 @@ function PaneGrid(): JSX.Element {
     )
   }
 
-  const paneCount = paneLayout
-  const gridClass = paneLayout === 2
-    ? 'grid grid-cols-2 gap-px'
-    : 'grid grid-cols-2 grid-rows-2 gap-px'
+  const renderPane = (i: number): JSX.Element => {
+    const agentId = paneAgentIds[i]
+    if (!agentId) {
+      return (
+        <div className="flex flex-col h-full items-center justify-center bg-card text-muted-foreground gap-2">
+          <p className="text-xs">Pane {i + 1}</p>
+          <div className="flex flex-wrap gap-1 max-w-[200px] justify-center">
+            {agents
+              .filter((a) => a.status !== 'archived')
+              .map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => setPaneAgent(i, a.id)}
+                  className="text-[10px] px-2 py-1 rounded bg-secondary hover:bg-accent transition-colors"
+                >
+                  {a.name}
+                </button>
+              ))}
+          </div>
+        </div>
+      )
+    }
+    return usePtyMode ? (
+      <PtyTerminalView
+        key={`${i}-${agentId}`}
+        agentId={agentId}
+        compact={paneLayout === 4}
+      />
+    ) : (
+      <TerminalView
+        key={`${i}-${agentId}`}
+        agentId={agentId}
+        compact={paneLayout === 4}
+        onClose={() => setPaneAgent(i, null)}
+      />
+    )
+  }
 
+  if (paneLayout === 2) {
+    return (
+      <Group orientation="horizontal" className="flex-1 overflow-hidden">
+        <Panel defaultSize="50%" minSize={150}>
+          {renderPane(0)}
+        </Panel>
+        <ResizeHandle />
+        <Panel defaultSize="50%" minSize={150}>
+          {renderPane(1)}
+        </Panel>
+      </Group>
+    )
+  }
+
+  // 4-pane layout
   return (
-    <div className={cn('flex-1 overflow-hidden bg-border', gridClass)}>
-      {Array.from({ length: paneCount }).map((_, i) => {
-        const agentId = paneAgentIds[i]
-        if (!agentId) {
-          return (
-            <div key={i} className="flex flex-col items-center justify-center bg-card text-muted-foreground gap-2">
-              <p className="text-xs">Pane {i + 1}</p>
-              <div className="flex flex-wrap gap-1 max-w-[200px] justify-center">
-                {agents
-                  .filter((a) => a.status !== 'archived')
-                  .map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() => setPaneAgent(i, a.id)}
-                      className="text-[10px] px-2 py-1 rounded bg-secondary hover:bg-accent transition-colors"
-                    >
-                      {a.name}
-                    </button>
-                  ))}
-              </div>
-            </div>
-          )
-        }
-        return usePtyMode ? (
-          <PtyTerminalView
-            key={`${i}-${agentId}`}
-            agentId={agentId}
-            compact={paneLayout === 4}
-          />
-        ) : (
-          <TerminalView
-            key={`${i}-${agentId}`}
-            agentId={agentId}
-            compact={paneLayout === 4}
-            onClose={() => setPaneAgent(i, null)}
-          />
-        )
-      })}
-    </div>
+    <Group orientation="vertical" className="flex-1 overflow-hidden">
+      <Panel defaultSize="50%" minSize={100}>
+        <Group orientation="horizontal">
+          <Panel defaultSize="50%" minSize={150}>
+            {renderPane(0)}
+          </Panel>
+          <ResizeHandle />
+          <Panel defaultSize="50%" minSize={150}>
+            {renderPane(1)}
+          </Panel>
+        </Group>
+      </Panel>
+      <ResizeHandle direction="vertical" />
+      <Panel defaultSize="50%" minSize={100}>
+        <Group orientation="horizontal">
+          <Panel defaultSize="50%" minSize={150}>
+            {renderPane(2)}
+          </Panel>
+          <ResizeHandle />
+          <Panel defaultSize="50%" minSize={150}>
+            {renderPane(3)}
+          </Panel>
+        </Group>
+      </Panel>
+    </Group>
   )
 }
 
@@ -267,19 +303,29 @@ export function App(): JSX.Element {
         {agents.length === 0 ? (
           <WelcomeScreen onCreateAgent={() => setShowCreateDialog(true)} onOpenScanner={() => setShowWorkspaceScanner(true)} />
         ) : (
-          <>
-            <ErrorBoundary fallbackMessage="Sidebar failed to render">
-              <AgentList />
-            </ErrorBoundary>
-            <ErrorBoundary fallbackMessage="Terminal failed to render">
-              <PaneGrid />
-            </ErrorBoundary>
-            {showRightPane && (
-              <ErrorBoundary fallbackMessage="Context pane failed to render">
-                <ContextPane />
+          <Group orientation="horizontal">
+            <Panel defaultSize="20%" minSize={180} maxSize={350}>
+              <ErrorBoundary fallbackMessage="Sidebar failed to render">
+                <AgentList />
               </ErrorBoundary>
+            </Panel>
+            <ResizeHandle />
+            <Panel minSize={300}>
+              <ErrorBoundary fallbackMessage="Terminal failed to render">
+                <PaneGrid />
+              </ErrorBoundary>
+            </Panel>
+            {showRightPane && (
+              <>
+                <ResizeHandle />
+                <Panel defaultSize="25%" minSize={200} maxSize={500}>
+                  <ErrorBoundary fallbackMessage="Context pane failed to render">
+                    <ContextPane />
+                  </ErrorBoundary>
+                </Panel>
+              </>
             )}
-          </>
+          </Group>
         )}
       </div>
 

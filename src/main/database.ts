@@ -27,6 +27,7 @@ interface DBData {
   activeWorkspaceId: string | null
   settings: AppSettings
   nextMessageId: number
+  sessionScrollbacks: Record<string, string>
 }
 
 export class Database {
@@ -58,7 +59,8 @@ export class Database {
       workspaces: [],
       activeWorkspaceId: null,
       settings: { usePtyMode: true },
-      nextMessageId: 1
+      nextMessageId: 1,
+      sessionScrollbacks: {}
     }
   }
 
@@ -82,6 +84,11 @@ export class Database {
       if (agent.workspaceId === undefined) agent.workspaceId = null
     }
 
+    // Backfill sessionScrollbacks
+    if (!raw.sessionScrollbacks || typeof raw.sessionScrollbacks !== 'object') {
+      raw.sessionScrollbacks = {}
+    }
+
     return raw as unknown as DBData
   }
 
@@ -94,6 +101,23 @@ export class Database {
 
   exportData(): string {
     return JSON.stringify(this.data, null, 2)
+  }
+
+  // Scrollback buffer management (max 50KB per agent)
+  saveScrollback(agentId: string, buffer: string): void {
+    this.data.sessionScrollbacks[agentId] = buffer.slice(-50000)
+    this.save()
+  }
+
+  getScrollback(agentId: string): string {
+    return this.data.sessionScrollbacks[agentId] ?? ''
+  }
+
+  saveAllScrollbacks(scrollbacks: Record<string, string>): void {
+    for (const [id, buf] of Object.entries(scrollbacks)) {
+      this.data.sessionScrollbacks[id] = buf.slice(-50000)
+    }
+    this.save()
   }
 
   getDbPath(): string {
