@@ -3,6 +3,16 @@
     "title": "Claude Code Desktop",
     "subtitle": "AI エージェントチームマネジメント"
   },
+  "titleBar": {
+    "active": "稼働中",
+    "error": "エラー",
+    "awaiting": "待機",
+    "toggleContextPane": "コンテキストペイン切替"
+  },
+  "pane": {
+    "selectAgent": "エージェントを選択して開始",
+    "label": "ペイン"
+  },
   "agent": {
     "new": "新規エージェント",
     "name": "エージェント名",

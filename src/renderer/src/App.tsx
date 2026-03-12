@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Group, Panel, useDefaultLayout } from 'react-resizable-panels'
 import { useAppStore } from './stores/useAppStore'
 import { TitleBar } from './components/TitleBar'
@@ -21,6 +22,7 @@ import type { DiscoveredWorkspace } from '@shared/types'
 
 function PaneGrid(): JSX.Element {
   const { selectedAgentId, paneLayout, paneAgentIds, setPaneAgent, agents, usePtyMode } = useAppStore()
+  const { t } = useTranslation()
 
   // For single pane, use selectedAgentId directly
   // For multi-pane, use paneAgentIds
@@ -39,7 +41,7 @@ function PaneGrid(): JSX.Element {
     if (!selectedAgentId) {
       return (
         <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-          Select an agent to start
+          {t('pane.selectAgent', 'Select an agent to start')}
         </div>
       )
     }
@@ -57,7 +59,7 @@ function PaneGrid(): JSX.Element {
     if (!agentId) {
       return (
         <div className="flex flex-col h-full items-center justify-center bg-card text-muted-foreground gap-2">
-          <p className="text-xs">Pane {i + 1}</p>
+          <p className="text-xs">{t('pane.label', 'Pane')} {i + 1}</p>
           <div className="flex flex-wrap gap-1 max-w-[200px] justify-center">
             {agents
               .filter((a) => a.status !== 'archived')

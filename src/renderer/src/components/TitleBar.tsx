@@ -32,12 +32,12 @@ export function TitleBar(): JSX.Element {
           <span className="text-sm font-semibold">{t('app.title')}</span>
           {teamStats.total > 0 && (
             <div className="flex items-center gap-1.5 ml-2 text-[10px]">
-              <span className="px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-500">{teamStats.active} active</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-500">{teamStats.active} {t('titleBar.active', 'active')}</span>
               {teamStats.error > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-500">{teamStats.error} err</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-500">{teamStats.error} {t('titleBar.error', 'err')}</span>
               )}
               {teamStats.awaiting > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-500">{teamStats.awaiting} wait</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-500">{teamStats.awaiting} {t('titleBar.awaiting', 'wait')}</span>
               )}
             </div>
           )}
@@ -80,7 +80,7 @@ export function TitleBar(): JSX.Element {
           <button
             onClick={toggleRightPane}
             className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
-            title="Toggle Context Pane"
+            title={t('titleBar.toggleContextPane', 'Toggle Context Pane')}
           >
             <PanelRight size={16} />
           </button>

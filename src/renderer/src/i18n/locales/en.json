@@ -3,6 +3,16 @@
     "title": "Claude Code Desktop",
     "subtitle": "AI Agent Team Management"
   },
+  "titleBar": {
+    "active": "active",
+    "error": "err",
+    "awaiting": "wait",
+    "toggleContextPane": "Toggle Context Pane"
+  },
+  "pane": {
+    "selectAgent": "Select an agent to start",
+    "label": "Pane"
+  },
   "agent": {
     "new": "New Agent",
     "name": "Agent Name",
