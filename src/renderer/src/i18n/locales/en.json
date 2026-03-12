@@ -345,7 +345,12 @@
   "error": {
     "somethingWrong": "Something went wrong",
     "unexpected": "An unexpected error occurred",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "cliStartFailed": "Could not start Claude CLI. Please check that Claude CLI is installed and accessible.",
+    "invalidPath": "The specified project path is invalid or inaccessible.",
+    "agentCreateFailed": "Failed to create agent. Please check the form fields and try again.",
+    "invalidWorkspace": "The specified workspace could not be found.",
+    "connectionFailed": "Connection failed. Please check your network settings."
   },
   "browser": {
     "back": "Back",

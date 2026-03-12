@@ -197,12 +197,13 @@ export class SessionManager {
     })
 
     proc.on('error', (err) => {
+      console.error('[SessionManager] CLI start error:', err.message)
       this.database.updateAgent(agent.id, { status: 'error' })
       this.onStatusChange(agent.id, 'error')
       this.onOutput(agent.id, {
         role: 'system',
         contentType: 'error',
-        content: `Failed to start Claude CLI: ${err.message}`
+        content: t('error.cliStartFailed')
       })
       this.sessions.delete(agent.id)
     })

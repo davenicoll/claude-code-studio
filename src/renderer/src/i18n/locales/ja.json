@@ -345,7 +345,12 @@
   "error": {
     "somethingWrong": "問題が発生しました",
     "unexpected": "予期せぬエラーが発生しました",
-    "tryAgain": "再試行"
+    "tryAgain": "再試行",
+    "cliStartFailed": "Claude CLIを起動できませんでした。Claude CLIがインストールされ、アクセス可能であることを確認してください。",
+    "invalidPath": "指定されたプロジェクトパスが無効、またはアクセスできません。",
+    "agentCreateFailed": "エージェントの作成に失敗しました。入力内容を確認して再試行してください。",
+    "invalidWorkspace": "指定されたワークスペースが見つかりませんでした。",
+    "connectionFailed": "接続に失敗しました。ネットワーク設定を確認してください。"
   },
   "browser": {
     "back": "戻る",
