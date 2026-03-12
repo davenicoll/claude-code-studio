@@ -222,7 +222,15 @@
     "send": "送信 (Ctrl+Enter)",
     "clear": "クリア",
     "toSend": "で送信",
-    "forNewline": "で改行"
+    "forNewline": "で改行",
+    "templates": "テンプレート",
+    "category": {
+      "command": "コマンド",
+      "review": "レビュー",
+      "dev": "開発",
+      "git": "Git",
+      "info": "情報"
+    }
   },
   "workspace": {
     "allAgents": "すべてのエージェント",

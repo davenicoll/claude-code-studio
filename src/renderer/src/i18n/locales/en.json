@@ -222,7 +222,15 @@
     "send": "Send (Ctrl+Enter)",
     "clear": "Clear",
     "toSend": "to send",
-    "forNewline": "for newline"
+    "forNewline": "for newline",
+    "templates": "Templates",
+    "category": {
+      "command": "Command",
+      "review": "Review",
+      "dev": "Dev",
+      "git": "Git",
+      "info": "Info"
+    }
   },
   "workspace": {
     "allAgents": "All Agents",

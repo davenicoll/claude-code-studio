@@ -207,7 +207,7 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
             className="flex items-center gap-1 cursor-pointer hover:text-muted-foreground/80"
           >
             {showTemplates ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-            <span>Templates</span>
+            <span>{t('composer.templates', 'Templates')}</span>
           </button>
           {showTemplates && (
             <div className="absolute bottom-full right-0 mb-1 w-64 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
@@ -224,7 +224,7 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
                     tmpl.category === 'git' ? 'bg-green-500/20 text-green-400' :
                     'bg-muted text-muted-foreground'
                   )}>
-                    {tmpl.category}
+                    {t(`composer.category.${tmpl.category}`, tmpl.category)}
                   </span>
                   <span className="truncate">{tmpl.label}</span>
                 </button>
