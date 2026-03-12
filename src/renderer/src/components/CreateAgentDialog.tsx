@@ -143,7 +143,7 @@ export function CreateAgentDialog({ onClose, prefill }: CreateAgentDialogProps):
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Frontend Dev"
+              placeholder={t('agent.rolePlaceholder', 'e.g., Frontend Dev')}
               className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
             />
           </div>
@@ -196,7 +196,7 @@ export function CreateAgentDialog({ onClose, prefill }: CreateAgentDialogProps):
                   type="text"
                   value={roleLabel}
                   onChange={(e) => setRoleLabel(e.target.value)}
-                  placeholder="frontend / backend / test"
+                  placeholder={t('agent.tagPlaceholder', 'frontend / backend / test')}
                   className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none"
                 />
               </div>
@@ -231,7 +231,7 @@ export function CreateAgentDialog({ onClose, prefill }: CreateAgentDialogProps):
                 <textarea
                   value={systemPrompt}
                   onChange={(e) => setSystemPrompt(e.target.value)}
-                  placeholder="Optional: Define the agent's role..."
+                  placeholder={t('agent.systemPromptPlaceholder', 'Optional: Define the agent\'s role...')}
                   rows={3}
                   className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none resize-none"
                 />
