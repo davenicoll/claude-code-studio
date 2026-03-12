@@ -73,7 +73,7 @@ export function BroadcastModal(): JSX.Element | null {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium">
-                {selected.size}/{activeAgents.length} selected
+                {selected.size}/{activeAgents.length} {t('broadcast.selected', 'selected')}
               </span>
               <button
                 onClick={selectAll}

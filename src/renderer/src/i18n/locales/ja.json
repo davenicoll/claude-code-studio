@@ -89,6 +89,7 @@
     "title": "チーム会議",
     "subtitle": "複数のエージェントにメッセージを一括送信",
     "selectAll": "全員選択",
+    "selected": "選択済み",
     "selectByProject": "プロジェクト別",
     "selectByRole": "役割別",
     "send": "一括送信",

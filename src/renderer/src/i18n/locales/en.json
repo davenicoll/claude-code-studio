@@ -89,6 +89,7 @@
     "title": "Team Meeting",
     "subtitle": "Send a message to multiple agents",
     "selectAll": "Select All",
+    "selected": "selected",
     "selectByProject": "By Project",
     "selectByRole": "By Role",
     "send": "Broadcast",
