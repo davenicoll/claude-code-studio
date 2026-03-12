@@ -218,6 +218,8 @@ function setupIPC(): void {
       await sessionManager.stopSession(id)
     }
     database.updateAgent(id, { status: 'archived' })
+    // Notify renderer so UI removes the agent from the list
+    mainWindow?.webContents.send('agent:status-change', id, 'archived')
   })
 
   // Messaging
