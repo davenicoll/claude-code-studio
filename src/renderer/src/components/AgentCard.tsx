@@ -31,10 +31,17 @@ export function AgentCard({ agent, isSelected, onClick }: AgentCardProps): JSX.E
         setContextMenu(null)
       }
     }
+    const handleKeyDown = (e: globalThis.KeyboardEvent): void => {
+      if (e.key === 'Escape') setContextMenu(null)
+    }
     if (contextMenu) {
       document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
   }, [contextMenu])
 
   const handlePin = async (): Promise<void> => {
@@ -105,10 +112,12 @@ export function AgentCard({ agent, isSelected, onClick }: AgentCardProps): JSX.E
           ref={menuRef}
           className="fixed z-50 bg-card border border-border rounded-lg shadow-xl py-1 min-w-[160px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
+          role="menu"
         >
           <button
             onClick={handlePin}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent transition-colors"
+            role="menuitem"
           >
             {agent.isPinned ? <PinOff size={12} /> : <Pin size={12} />}
             {agent.isPinned ? t('agent.actions.unpin') : t('agent.actions.pin')}
@@ -116,6 +125,7 @@ export function AgentCard({ agent, isSelected, onClick }: AgentCardProps): JSX.E
           <button
             onClick={handleRestart}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent transition-colors"
+            role="menuitem"
           >
             <RotateCw size={12} />
             {t('agent.actions.restart')}
@@ -124,6 +134,7 @@ export function AgentCard({ agent, isSelected, onClick }: AgentCardProps): JSX.E
           <button
             onClick={handleArchive}
             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-destructive hover:bg-accent transition-colors"
+            role="menuitem"
           >
             <Archive size={12} />
             {t('agent.actions.archive')}
