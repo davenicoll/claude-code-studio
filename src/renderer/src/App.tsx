@@ -41,9 +41,13 @@ function PaneGrid(): JSX.Element {
         </div>
       )
     }
-    return usePtyMode
-      ? <PtyTerminalView agentId={selectedAgentId} />
-      : <TerminalView agentId={selectedAgentId} />
+    return (
+      <div className="flex-1 min-w-0 overflow-hidden">
+        {usePtyMode
+          ? <PtyTerminalView agentId={selectedAgentId} />
+          : <TerminalView agentId={selectedAgentId} />}
+      </div>
+    )
   }
 
   const paneCount = paneLayout
