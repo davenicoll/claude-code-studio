@@ -54,6 +54,7 @@
     @apply bg-background text-foreground;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     -webkit-app-region: no-drag;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-1 ring-offset-background;
@@ -72,14 +73,35 @@
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: hsl(var(--muted-foreground) / 0.2);
   border-radius: 3px;
+  transition: background 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Theme transition for all themed elements */
+*,
+*::before,
+*::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Exclude xterm from theme transition to avoid flicker */
+.xterm,
+.xterm * {
+  transition: none !important;
+}
+
+/* Selection styling */
+::selection {
+  background: hsl(var(--primary) / 0.3);
+  color: hsl(var(--foreground));
 }
