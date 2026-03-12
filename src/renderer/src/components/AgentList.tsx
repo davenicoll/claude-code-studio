@@ -259,7 +259,7 @@ export function AgentList(): JSX.Element {
       <div className="p-2.5 border-b border-border space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Agents
+            {t('agent.listTitle', 'Agents')}
           </span>
           <div className="flex items-center gap-0.5">
             <button
@@ -354,7 +354,7 @@ export function AgentList(): JSX.Element {
                             ? 'hover:bg-red-500/20 text-red-500'
                             : 'hover:bg-yellow-500/20 text-orange-500'
                         )}
-                        title="Open"
+                        title={t('inbox.open')}
                       >
                         <ExternalLink size={12} />
                       </button>
@@ -377,7 +377,7 @@ export function AgentList(): JSX.Element {
           <div className="p-4 text-center text-xs text-muted-foreground">
             {agents.filter((a) => a.status !== 'archived').length === 0
               ? t('agent.noAgents')
-              : `"${search}" — no results`}
+              : t('common.noResults', '"{{query}}" — no results', { query: search })}
           </div>
         ) : (
           projectGroups.map((group) => {
@@ -499,14 +499,14 @@ export function AgentList(): JSX.Element {
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
             >
               <Copy size={12} />
-              Duplicate
+              {t('agent.actions.duplicate', 'Duplicate')}
             </button>
             <button
               onClick={() => handleExportTemplate(ctxAgent.id)}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
             >
               <Download size={12} />
-              Export Template
+              {t('agent.actions.exportTemplate', 'Export Template')}
             </button>
             <div className="border-t border-border/50 my-1" />
             <button

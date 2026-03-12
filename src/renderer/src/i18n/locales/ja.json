@@ -38,8 +38,11 @@
       "unpin": "ピン解除",
       "rename": "名前変更",
       "changeRole": "役割変更",
-      "title": "アクション"
+      "title": "アクション",
+      "duplicate": "複製",
+      "exportTemplate": "テンプレートをエクスポート"
     },
+    "listTitle": "エージェント",
     "noAgents": "エージェントがいません。作成して始めましょう！",
     "currentTask": "現在のタスク",
     "skills": "スキル",
@@ -253,7 +256,8 @@
     "loading": "読み込み中...",
     "confirm": "確認",
     "approve": "承認",
-    "reject": "拒否"
+    "reject": "拒否",
+    "noResults": "\"{{query}}\" — 結果なし"
   },
   "terminal": {
     "noAgent": "エージェントが選択されていません",

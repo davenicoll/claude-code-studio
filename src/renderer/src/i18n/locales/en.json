@@ -38,8 +38,11 @@
       "unpin": "Unpin",
       "rename": "Rename",
       "changeRole": "Change Role",
-      "title": "Actions"
+      "title": "Actions",
+      "duplicate": "Duplicate",
+      "exportTemplate": "Export Template"
     },
+    "listTitle": "Agents",
     "noAgents": "No agents yet. Create one to get started!",
     "currentTask": "Current task",
     "skills": "Skills",
@@ -253,7 +256,8 @@
     "loading": "Loading...",
     "confirm": "Confirm",
     "approve": "Approve",
-    "reject": "Reject"
+    "reject": "Reject",
+    "noResults": "\"{{query}}\" — no results"
   },
   "terminal": {
     "noAgent": "No agent selected",
