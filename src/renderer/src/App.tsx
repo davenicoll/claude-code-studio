@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState } from 'react'
-import { Group, Panel } from 'react-resizable-panels'
+import { Group, Panel, useDefaultLayout } from 'react-resizable-panels'
 import { useAppStore } from './stores/useAppStore'
 import { TitleBar } from './components/TitleBar'
 import { AgentList } from './components/AgentList'
@@ -130,6 +130,54 @@ function PaneGrid(): JSX.Element {
           </Panel>
         </Group>
       </Panel>
+    </Group>
+  )
+}
+
+function MainLayout({ showRightPane }: { showRightPane: boolean }): JSX.Element {
+  const panelIds = showRightPane
+    ? ['sidebar', 'terminal', 'context']
+    : ['sidebar', 'terminal']
+
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
+    id: `main-layout-${showRightPane ? '3' : '2'}`,
+    panelIds,
+  })
+
+  return (
+    <Group
+      orientation="horizontal"
+      defaultLayout={defaultLayout}
+      onLayoutChanged={onLayoutChanged}
+    >
+      <Panel
+        id="sidebar"
+        defaultSize="20%"
+        minSize={180}
+        maxSize={350}
+        collapsible
+        collapsedSize={0}
+      >
+        <ErrorBoundary fallbackMessage="Sidebar failed to render">
+          <AgentList />
+        </ErrorBoundary>
+      </Panel>
+      <ResizeHandle />
+      <Panel id="terminal" minSize={300}>
+        <ErrorBoundary fallbackMessage="Terminal failed to render">
+          <PaneGrid />
+        </ErrorBoundary>
+      </Panel>
+      {showRightPane && (
+        <>
+          <ResizeHandle />
+          <Panel id="context" defaultSize="25%" minSize={200} maxSize={500}>
+            <ErrorBoundary fallbackMessage="Context pane failed to render">
+              <ContextPane />
+            </ErrorBoundary>
+          </Panel>
+        </>
+      )}
     </Group>
   )
 }
@@ -303,29 +351,7 @@ export function App(): JSX.Element {
         {agents.length === 0 ? (
           <WelcomeScreen onCreateAgent={() => setShowCreateDialog(true)} onOpenScanner={() => setShowWorkspaceScanner(true)} />
         ) : (
-          <Group orientation="horizontal">
-            <Panel defaultSize="20%" minSize={180} maxSize={350}>
-              <ErrorBoundary fallbackMessage="Sidebar failed to render">
-                <AgentList />
-              </ErrorBoundary>
-            </Panel>
-            <ResizeHandle />
-            <Panel minSize={300}>
-              <ErrorBoundary fallbackMessage="Terminal failed to render">
-                <PaneGrid />
-              </ErrorBoundary>
-            </Panel>
-            {showRightPane && (
-              <>
-                <ResizeHandle />
-                <Panel defaultSize="25%" minSize={200} maxSize={500}>
-                  <ErrorBoundary fallbackMessage="Context pane failed to render">
-                    <ContextPane />
-                  </ErrorBoundary>
-                </Panel>
-              </>
-            )}
-          </Group>
+          <MainLayout showRightPane={showRightPane} />
         )}
       </div>
 

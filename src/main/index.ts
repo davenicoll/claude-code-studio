@@ -93,7 +93,7 @@ function createWindow(): void {
   }
 }
 
-function createTrayIcon(): nativeImage {
+function createTrayIcon(): Electron.NativeImage {
   // Generate a simple programmatic icon (16x16 circle)
   const size = 16
   const canvas = Buffer.alloc(size * size * 4) // RGBA
@@ -314,7 +314,7 @@ function setupIPC(): void {
     ) {
       throw new Error('Invalid chain parameters: name, triggerAgentId, targetAgentId, and messageTemplate are required')
     }
-    return database.createChain(chain)
+    return database.createChain(chain as unknown as Omit<import('@shared/types').TaskChain, 'id' | 'createdAt'>)
   })
 
   ipcMain.handle('chain:list', () => {
@@ -375,7 +375,7 @@ function setupIPC(): void {
   ipcMain.handle('workspace:create', (_event, params: unknown) => {
     const p = params as Record<string, unknown>
     if (!p.name || typeof p.name !== 'string') throw new Error('name is required')
-    return database.createWorkspace(p as import('@shared/types').CreateWorkspaceParams)
+    return database.createWorkspace(p as unknown as import('@shared/types').CreateWorkspaceParams)
   })
 
   ipcMain.handle('workspace:list', () => {
@@ -427,7 +427,7 @@ function setupIPC(): void {
             if (ok) {
               resolve({ success: true, message: 'Connected. tmux and claude found.' })
             } else {
-              const missing = []
+              const missing: string[] = []
               if (!hasTmux) missing.push('tmux')
               if (!hasClaude) missing.push('claude')
               resolve({ success: true, message: `Connected. Missing: ${missing.join(', ')}` })

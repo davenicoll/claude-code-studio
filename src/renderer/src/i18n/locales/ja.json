@@ -107,7 +107,8 @@
     }
   },
   "contextPane": {
-    "details": "詳細"
+    "details": "詳細",
+    "browser": "ブラウザ"
   },
   "profile": {
     "tab": "プロフィール",

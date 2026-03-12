@@ -44,7 +44,7 @@ export function ContextPane(): JSX.Element {
       </button>
       <button onClick={() => setActiveTab('browser')} className={tabClass('browser')}>
         <Globe size={12} />
-        Browser
+        {t('contextPane.browser', 'Browser')}
       </button>
     </div>
   )

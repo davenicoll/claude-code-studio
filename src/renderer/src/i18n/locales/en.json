@@ -107,7 +107,8 @@
     }
   },
   "contextPane": {
-    "details": "Details"
+    "details": "Details",
+    "browser": "Browser"
   },
   "profile": {
     "tab": "Profile",
