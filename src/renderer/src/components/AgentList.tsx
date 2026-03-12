@@ -180,7 +180,7 @@ export function AgentList(): JSX.Element {
     const agent = agents.find((a) => a.id === agentId)
     if (!agent) return
     setContextMenu(null)
-    if (!confirm(`Archive agent "${agent.name}"?`)) return
+    if (!confirm(t('agent.confirmArchive', 'Archive agent "{{name}}"?', { name: agent.name }))) return
     try {
       await window.api.archiveAgent(agentId)
       const remaining = agents.filter((a) => a.id !== agentId && a.status !== 'archived')

@@ -43,6 +43,7 @@
       "exportTemplate": "テンプレートをエクスポート"
     },
     "listTitle": "エージェント",
+    "confirmArchive": "エージェント \"{{name}}\" をアーカイブしますか？",
     "noAgents": "エージェントがいません。作成して始めましょう！",
     "currentTask": "現在のタスク",
     "skills": "スキル",
@@ -257,7 +258,8 @@
     "confirm": "確認",
     "approve": "承認",
     "reject": "拒否",
-    "noResults": "\"{{query}}\" — 結果なし"
+    "noResults": "\"{{query}}\" — 結果なし",
+    "ok": "OK"
   },
   "toast": {
     "agentRestarted": "エージェントが再起動されました",

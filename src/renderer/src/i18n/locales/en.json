@@ -43,6 +43,7 @@
       "exportTemplate": "Export Template"
     },
     "listTitle": "Agents",
+    "confirmArchive": "Archive agent \"{{name}}\"?",
     "noAgents": "No agents yet. Create one to get started!",
     "currentTask": "Current task",
     "skills": "Skills",
@@ -257,7 +258,8 @@
     "confirm": "Confirm",
     "approve": "Approve",
     "reject": "Reject",
-    "noResults": "\"{{query}}\" — no results"
+    "noResults": "\"{{query}}\" — no results",
+    "ok": "OK"
   },
   "toast": {
     "agentRestarted": "Agent restarted",

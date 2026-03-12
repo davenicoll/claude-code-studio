@@ -186,7 +186,7 @@ export function Dashboard({ onOpenScanner }: DashboardProps): JSX.Element {
                   />
                 ))}
               </div>
-              <button onClick={handleCreateTeam} className="text-[10px] text-primary hover:underline">OK</button>
+              <button onClick={handleCreateTeam} className="text-[10px] text-primary hover:underline">{t('common.ok', 'OK')}</button>
               <button onClick={() => setShowNewTeam(false)} className="text-[10px] text-muted-foreground">
                 <X size={10} />
               </button>
