@@ -430,7 +430,7 @@ export function TerminalView({ agentId, onClose, compact }: TerminalViewProps): 
     try {
       await window.api.sendMessage(agentId, content)
     } catch (err) {
-      showToast('Send Failed', err instanceof Error ? err.message : 'Failed to send', 'error')
+      showToast(t('toast.sendFailed', 'Send Failed'), err instanceof Error ? err.message : t('toast.sendFailedDetail', 'Failed to send'), 'error')
     }
   }
 

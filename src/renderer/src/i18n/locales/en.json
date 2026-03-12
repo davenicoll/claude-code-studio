@@ -259,6 +259,11 @@
     "reject": "Reject",
     "noResults": "\"{{query}}\" — no results"
   },
+  "toast": {
+    "agentRestarted": "Agent restarted",
+    "sendFailed": "Send Failed",
+    "sendFailedDetail": "Failed to send"
+  },
   "terminal": {
     "noAgent": "No agent selected",
     "interrupt": "Interrupt (Ctrl+C)",

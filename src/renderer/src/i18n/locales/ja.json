@@ -259,6 +259,11 @@
     "reject": "拒否",
     "noResults": "\"{{query}}\" — 結果なし"
   },
+  "toast": {
+    "agentRestarted": "エージェントが再起動されました",
+    "sendFailed": "送信失敗",
+    "sendFailedDetail": "メッセージを送信できませんでした"
+  },
   "terminal": {
     "noAgent": "エージェントが選択されていません",
     "interrupt": "中断 (Ctrl+C)",

@@ -197,7 +197,7 @@ export function AgentList(): JSX.Element {
     setContextMenu(null)
     try {
       await window.api.restartAgent(agentId)
-      showToast('Agent restarted', 'success')
+      showToast(t('toast.agentRestarted', 'Agent restarted'), 'success')
     } catch (err) {
       showToast(err instanceof Error ? err.message : String(err), 'error')
     }

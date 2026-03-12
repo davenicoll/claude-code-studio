@@ -221,7 +221,7 @@ export function ContextPane(): JSX.Element {
                 try {
                   await window.api.ptyStop(agent.id)
                   await window.api.ptyStart(agent.id)
-                  showToast('Agent restarted', 'success')
+                  showToast(t('toast.agentRestarted', 'Agent restarted'), 'success')
                 } catch (err) {
                   showToast(err instanceof Error ? err.message : String(err), 'error')
                 }

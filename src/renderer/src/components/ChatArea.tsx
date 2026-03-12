@@ -55,7 +55,7 @@ export function ChatArea(): JSX.Element {
     try {
       await window.api.sendMessage(selectedAgentId, content)
     } catch (err) {
-      showToast('Send Failed', err instanceof Error ? err.message : 'Failed to send message', 'error')
+      showToast(t('toast.sendFailed', 'Send Failed'), err instanceof Error ? err.message : t('toast.sendFailedDetail', 'Failed to send message'), 'error')
     }
   }
 
