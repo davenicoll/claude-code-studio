@@ -13,6 +13,7 @@ import {
   ExternalLink,
   RotateCw,
   Archive,
+  ArchiveRestore,
   Copy,
   Pin,
   PinOff,
@@ -192,6 +193,18 @@ export function AgentList(): JSX.Element {
       showToast(err instanceof Error ? err.message : String(err), 'error')
     }
   }, [agents, selectedAgentId, setSelectedAgent])
+
+  const [showArchived, setShowArchived] = useState(false)
+  const archivedAgents = useMemo(() => agents.filter((a) => a.status === 'archived'), [agents])
+
+  const handleUnarchiveAgent = useCallback(async (agentId: string) => {
+    try {
+      await window.api.unarchiveAgent(agentId)
+      showToast(t('toast.agentRestored', 'Agent restored'), 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : String(err), 'error')
+    }
+  }, [])
 
   const handleRestartAgent = useCallback(async (agentId: string) => {
     setContextMenu(null)
@@ -519,6 +532,52 @@ export function AgentList(): JSX.Element {
           </div>
         )
       })()}
+
+      {/* Archived agents section */}
+      {archivedAgents.length > 0 && (
+        <div className="mt-2 border-t border-border pt-2">
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className="flex items-center gap-1.5 px-2.5 py-1 w-full text-left hover:bg-accent/50 rounded transition-colors"
+          >
+            {showArchived ? (
+              <ChevronDown size={12} className="text-muted-foreground" />
+            ) : (
+              <ChevronRight size={12} className="text-muted-foreground" />
+            )}
+            <Archive size={12} className="text-muted-foreground" />
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              {t('agent.archived', 'Archived')}
+            </span>
+            <span className="text-[9px] text-muted-foreground ml-auto">{archivedAgents.length}</span>
+          </button>
+          {showArchived && (
+            <div className="space-y-0.5 mt-1">
+              {archivedAgents.map((agent) => (
+                <div
+                  key={agent.id}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded mx-1 bg-secondary/30 group"
+                >
+                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[9px] font-bold text-muted-foreground shrink-0 opacity-50">
+                    {getInitials(agent.name)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-muted-foreground truncate line-through">{agent.name}</div>
+                    <div className="text-[9px] text-muted-foreground/60 truncate">{agent.projectName}</div>
+                  </div>
+                  <button
+                    onClick={() => handleUnarchiveAgent(agent.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-accent transition-all"
+                    title={t('agent.actions.restore', 'Restore')}
+                  >
+                    <ArchiveRestore size={12} className="text-muted-foreground" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {showCreate && (
         <CreateAgentDialog

@@ -41,7 +41,8 @@
       "changeRole": "役割変更",
       "title": "アクション",
       "duplicate": "複製",
-      "exportTemplate": "テンプレートをエクスポート"
+      "exportTemplate": "テンプレートをエクスポート",
+      "restore": "復元"
     },
     "listTitle": "エージェント",
     "confirmArchive": "エージェント \"{{name}}\" をアーカイブしますか？",

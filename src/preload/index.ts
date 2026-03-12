@@ -8,6 +8,7 @@ const api: ElectronAPI = {
   getAgent: (id) => ipcRenderer.invoke('agent:get', id),
   updateAgent: (id, updates) => ipcRenderer.invoke('agent:update', id, updates),
   archiveAgent: (id) => ipcRenderer.invoke('agent:archive', id),
+  unarchiveAgent: (id) => ipcRenderer.invoke('agent:unarchive', id),
 
   // Messaging
   sendMessage: (agentId, content) => ipcRenderer.invoke('message:send', agentId, content),

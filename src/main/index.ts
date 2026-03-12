@@ -222,6 +222,12 @@ function setupIPC(): void {
     mainWindow?.webContents.send('agent:status-change', id, 'archived')
   })
 
+  ipcMain.handle('agent:unarchive', async (_event, id: string) => {
+    if (typeof id !== 'string') throw new Error('Invalid agent ID')
+    database.updateAgent(id, { status: 'idle' })
+    mainWindow?.webContents.send('agent:status-change', id, 'idle')
+  })
+
   // Messaging
   ipcMain.handle('message:send', async (_event, agentId: string, content: string) => {
     if (typeof agentId !== 'string' || typeof content !== 'string') {

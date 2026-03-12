@@ -201,6 +201,7 @@ export interface ElectronAPI {
   getAgent: (id: string) => Promise<Agent | null>
   updateAgent: (id: string, updates: Partial<Agent>) => Promise<Agent>
   archiveAgent: (id: string) => Promise<void>
+  unarchiveAgent: (id: string) => Promise<void>
 
   // Messaging
   sendMessage: (agentId: string, content: string) => Promise<void>

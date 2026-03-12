@@ -41,7 +41,8 @@
       "changeRole": "Change Role",
       "title": "Actions",
       "duplicate": "Duplicate",
-      "exportTemplate": "Export Template"
+      "exportTemplate": "Export Template",
+      "restore": "Restore"
     },
     "listTitle": "Agents",
     "confirmArchive": "Archive agent \"{{name}}\"?",
