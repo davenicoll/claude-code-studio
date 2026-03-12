@@ -1,7 +1,18 @@
 {
   "app": {
     "title": "Claude Code Desktop",
-    "subtitle": "AI エージェントチームマネジメント"
+    "subtitle": "AIエージェントチーム管理"
+  },
+  "status": {
+    "creating": "起動中",
+    "active": "準備完了",
+    "thinking": "思考中",
+    "tool_running": "実行中",
+    "awaiting": "待機中",
+    "error": "エラー",
+    "session_conflict": "使用中",
+    "idle": "アイドル",
+    "archived": "アーカイブ済み"
   },
   "titleBar": {
     "active": "稼働中",

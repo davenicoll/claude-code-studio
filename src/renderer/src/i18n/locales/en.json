@@ -3,6 +3,17 @@
     "title": "Claude Code Desktop",
     "subtitle": "AI Agent Team Management"
   },
+  "status": {
+    "creating": "Starting",
+    "active": "Ready",
+    "thinking": "Thinking",
+    "tool_running": "Running",
+    "awaiting": "Awaiting",
+    "error": "Error",
+    "session_conflict": "In Use",
+    "idle": "Idle",
+    "archived": "Archived"
+  },
   "titleBar": {
     "active": "active",
     "error": "err",
