@@ -67,7 +67,7 @@ function AgentHeader({ agent, compact, workspace }: { agent: Agent; compact: boo
           </span>
         )}
         <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full', statusBadge.className)}>
-          {statusBadge.label}
+          {t(`agent.status.${agent.status}`)}
         </span>
         {workspace?.connectionType === 'ssh' && (
           <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-500">
