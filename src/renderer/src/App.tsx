@@ -200,6 +200,7 @@ export function App(): JSX.Element {
     toggleBroadcast
   } = useAppStore()
 
+  const { t } = useTranslation()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showWorkspaceScanner, setShowWorkspaceScanner] = useState(false)
   const [prefillWorkspace, setPrefillWorkspace] = useState<DiscoveredWorkspace | null>(null)
@@ -326,7 +327,7 @@ export function App(): JSX.Element {
         e.preventDefault()
         if (selectedAgentId) {
           const agentToArchive = agents.find((a) => a.id === selectedAgentId)
-          if (agentToArchive && confirm(`Archive agent "${agentToArchive.name}"?`)) {
+          if (agentToArchive && confirm(t('agent.confirmArchive', 'Archive agent "{{name}}"?', { name: agentToArchive.name }))) {
             window.api.archiveAgent(selectedAgentId)
             const remaining = agents.filter((a) => a.id !== selectedAgentId && a.status !== 'archived')
             setSelectedAgent(remaining.length > 0 ? remaining[0].id : null)

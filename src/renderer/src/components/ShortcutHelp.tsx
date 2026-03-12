@@ -1,27 +1,29 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 
-const SHORTCUTS = [
-  { keys: 'Ctrl+N', action: 'New Agent' },
-  { keys: 'Ctrl+K', action: 'Command Palette' },
-  { keys: 'Ctrl+L', action: 'Focus Composer' },
-  { keys: 'Ctrl+D', action: 'Toggle Dashboard' },
-  { keys: 'Ctrl+Shift+B', action: 'Broadcast' },
-  { keys: 'Ctrl+Shift+P', action: 'Toggle Right Pane' },
-  { keys: 'Ctrl+Tab', action: 'Next Agent' },
-  { keys: 'Ctrl+Shift+Tab', action: 'Previous Agent' },
-  { keys: 'Ctrl+1-9', action: 'Switch to Agent #N' },
-  { keys: 'Ctrl+W', action: 'Archive Agent' },
-  { keys: 'Ctrl+=', action: 'Zoom In (Terminal Font)' },
-  { keys: 'Ctrl+-', action: 'Zoom Out (Terminal Font)' },
-  { keys: 'Up/Down', action: 'Message History (in Composer)' },
-  { keys: 'Enter', action: 'Send Message' },
-  { keys: 'Shift+Enter', action: 'New Line' },
-  { keys: 'Ctrl+?', action: 'This Help' }
-]
-
 export function ShortcutHelp(): JSX.Element | null {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
+
+  const SHORTCUTS = [
+    { keys: 'Ctrl+N', action: t('shortcuts.newAgent', 'New Agent') },
+    { keys: 'Ctrl+K', action: t('shortcuts.commandPalette', 'Command Palette') },
+    { keys: 'Ctrl+L', action: t('shortcuts.focusComposer', 'Focus Composer') },
+    { keys: 'Ctrl+D', action: t('shortcuts.toggleDashboard', 'Toggle Dashboard') },
+    { keys: 'Ctrl+Shift+B', action: t('shortcuts.broadcast', 'Broadcast') },
+    { keys: 'Ctrl+Shift+P', action: t('shortcuts.toggleRightPane', 'Toggle Right Pane') },
+    { keys: 'Ctrl+Tab', action: t('shortcuts.nextAgent', 'Next Agent') },
+    { keys: 'Ctrl+Shift+Tab', action: t('shortcuts.previousAgent', 'Previous Agent') },
+    { keys: 'Ctrl+1-9', action: t('shortcuts.switchAgent', 'Switch to Agent #N') },
+    { keys: 'Ctrl+W', action: t('shortcuts.archiveAgent', 'Archive Agent') },
+    { keys: 'Ctrl+=', action: t('shortcuts.zoomIn', 'Zoom In (Terminal Font)') },
+    { keys: 'Ctrl+-', action: t('shortcuts.zoomOut', 'Zoom Out (Terminal Font)') },
+    { keys: 'Up/Down', action: t('shortcuts.messageHistory', 'Message History (in Composer)') },
+    { keys: 'Enter', action: t('shortcuts.sendMessage', 'Send Message') },
+    { keys: 'Shift+Enter', action: t('shortcuts.newLine', 'New Line') },
+    { keys: 'Ctrl+?', action: t('shortcuts.thisHelp', 'This Help') }
+  ]
 
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
@@ -46,7 +48,7 @@ export function ShortcutHelp(): JSX.Element | null {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold">Keyboard Shortcuts</h3>
+          <h3 className="text-sm font-semibold">{t('shortcuts.title', 'Keyboard Shortcuts')}</h3>
           <button onClick={() => setIsOpen(false)} className="p-1 rounded hover:bg-accent">
             <X size={14} />
           </button>

@@ -277,6 +277,25 @@
     "stopFailed": "Stop failed: {{error}}",
     "interruptFailed": "Interrupt failed: {{error}}"
   },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "newAgent": "New Agent",
+    "commandPalette": "Command Palette",
+    "focusComposer": "Focus Composer",
+    "toggleDashboard": "Toggle Dashboard",
+    "broadcast": "Broadcast",
+    "toggleRightPane": "Toggle Right Pane",
+    "nextAgent": "Next Agent",
+    "previousAgent": "Previous Agent",
+    "switchAgent": "Switch to Agent #N",
+    "archiveAgent": "Archive Agent",
+    "zoomIn": "Zoom In (Terminal Font)",
+    "zoomOut": "Zoom Out (Terminal Font)",
+    "messageHistory": "Message History (in Composer)",
+    "sendMessage": "Send Message",
+    "newLine": "New Line",
+    "thisHelp": "This Help"
+  },
   "terminal": {
     "noAgent": "No agent selected",
     "interrupt": "Interrupt (Ctrl+C)",

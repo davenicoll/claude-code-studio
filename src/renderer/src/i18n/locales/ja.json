@@ -277,6 +277,25 @@
     "stopFailed": "停止失敗: {{error}}",
     "interruptFailed": "中断失敗: {{error}}"
   },
+  "shortcuts": {
+    "title": "キーボードショートカット",
+    "newAgent": "新規エージェント",
+    "commandPalette": "コマンドパレット",
+    "focusComposer": "入力欄にフォーカス",
+    "toggleDashboard": "ダッシュボード切替",
+    "broadcast": "ブロードキャスト",
+    "toggleRightPane": "右ペイン切替",
+    "nextAgent": "次のエージェント",
+    "previousAgent": "前のエージェント",
+    "switchAgent": "エージェント #N に切替",
+    "archiveAgent": "エージェントをアーカイブ",
+    "zoomIn": "ズームイン (ターミナルフォント)",
+    "zoomOut": "ズームアウト (ターミナルフォント)",
+    "messageHistory": "メッセージ履歴 (入力欄)",
+    "sendMessage": "メッセージ送信",
+    "newLine": "改行",
+    "thisHelp": "このヘルプ"
+  },
   "terminal": {
     "noAgent": "エージェントが選択されていません",
     "interrupt": "中断 (Ctrl+C)",
