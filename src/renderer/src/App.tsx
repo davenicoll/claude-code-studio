@@ -225,8 +225,14 @@ export function App(): JSX.Element {
     setAgents(agentList)
     const stats = await window.api.getTeamStats()
     setTeamStats(stats)
+    
+    const { usePtyMode, setTasks, setTemplates } = useAppStore.getState()
+    const taskList = await window.api.getTasks()
+    setTasks(taskList)
+    const templateList = await window.api.getTemplates()
+    setTemplates(templateList)
+    
     // Sync PTY mode setting to main process
-    const { usePtyMode } = useAppStore.getState()
     window.api.updateSettings({ usePtyMode })
   }, [setAgents, setTeamStats])
 

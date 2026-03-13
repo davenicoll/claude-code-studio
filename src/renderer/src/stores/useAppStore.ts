@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Agent, Message, TeamStats } from '@shared/types'
+import type { Agent, Message, TeamStats, Task, PromptTemplate } from '@shared/types'
 
 interface AppState {
   // Agents
@@ -16,6 +16,20 @@ interface AppState {
   setMessages: (agentId: string, messages: Message[]) => void
   addMessage: (agentId: string, message: Message) => void
 
+  // Tasks
+  tasks: Task[]
+  setTasks: (tasks: Task[]) => void
+  addTask: (task: Task) => void
+  updateTask: (id: string, updates: Partial<Task>) => void
+  removeTask: (id: string) => void
+
+  // Prompt Templates
+  templates: PromptTemplate[]
+  setTemplates: (templates: PromptTemplate[]) => void
+  addTemplate: (template: PromptTemplate) => void
+  updateTemplate: (id: string, updates: Partial<PromptTemplate>) => void
+  removeTemplate: (id: string) => void
+
   // Team stats
   teamStats: TeamStats
   setTeamStats: (stats: TeamStats) => void
@@ -23,8 +37,10 @@ interface AppState {
   // UI state
   showRightPane: boolean
   showBroadcast: boolean
+  showDashboard: boolean
   toggleRightPane: () => void
   toggleBroadcast: () => void
+  toggleDashboard: () => void
 
   // Layout
   paneLayout: 1 | 2 | 4
@@ -76,6 +92,28 @@ export const useAppStore = create<AppState>((set) => ({
       }
     })),
 
+  // Tasks
+  tasks: [],
+  setTasks: (tasks) => set({ tasks }),
+  addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
+  updateTask: (id, updates) =>
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t))
+    })),
+  removeTask: (id) =>
+    set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) })),
+
+  // Prompt Templates
+  templates: [],
+  setTemplates: (templates) => set({ templates }),
+  addTemplate: (template) => set((state) => ({ templates: [...state.templates, template] })),
+  updateTemplate: (id, updates) =>
+    set((state) => ({
+      templates: state.templates.map((t) => (t.id === id ? { ...t, ...updates } : t))
+    })),
+  removeTemplate: (id) =>
+    set((state) => ({ templates: state.templates.filter((t) => t.id !== id) })),
+
   // Team stats
   teamStats: { total: 0, active: 0, thinking: 0, awaiting: 0, error: 0, completedToday: 0 },
   setTeamStats: (stats) => set({ teamStats: stats }),
@@ -83,8 +121,20 @@ export const useAppStore = create<AppState>((set) => ({
   // UI state
   showRightPane: false,
   showBroadcast: false,
+  showDashboard: true,
   toggleRightPane: () => set((s) => ({ showRightPane: !s.showRightPane })),
   toggleBroadcast: () => set((s) => ({ showBroadcast: !s.showBroadcast })),
+  toggleDashboard: () => set((s) => {
+    if (s.selectedAgentId) {
+      // Currently viewing an agent → switch to dashboard
+      return { selectedAgentId: null, showDashboard: true }
+    }
+    // Already on dashboard → stay (or select first agent if available)
+    const firstAgent = s.agents.find(a => a.status !== 'archived')
+    return firstAgent
+      ? { selectedAgentId: firstAgent.id, showDashboard: false }
+      : {}
+  }),
 
   // Layout
   paneLayout: 1,

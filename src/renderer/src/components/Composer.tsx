@@ -1,23 +1,20 @@
-import { useState, useRef, useCallback, useEffect, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
-import { Send, X, ChevronDown, ChevronUp, GripHorizontal } from 'lucide-react'
+import { useState, useRef, useCallback, useEffect, useMemo, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { Send, X, ChevronDown, ChevronUp, GripHorizontal, Plus, Pencil, Trash2, Paperclip, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/stores/useAppStore'
+import type { PromptTemplate } from '@shared/types'
 
-interface PromptTemplate {
-  label: string
-  value: string
-  category: string
-}
-
-const TEMPLATES: PromptTemplate[] = [
-  { label: '/compact', value: '/compact', category: 'command' },
-  { label: '/clear', value: '/clear', category: 'command' },
-  { label: '/help', value: '/help', category: 'command' },
-  { label: 'Code Review', value: 'Please review the recent changes and provide feedback on code quality, potential bugs, and improvements.', category: 'review' },
-  { label: 'Run Tests', value: 'Run the test suite and report any failures.', category: 'dev' },
-  { label: 'Build & Lint', value: 'Run npm run build && npm run lint and fix any issues found.', category: 'dev' },
-  { label: 'Git Status', value: 'Show me the current git status and recent changes.', category: 'git' },
-  { label: 'Summarize', value: 'Please summarize what you have done so far in this session.', category: 'info' }
+// Built-in templates (not stored in DB)
+const BUILTIN_TEMPLATES: PromptTemplate[] = [
+  { id: '__compact', label: '/compact', value: '/compact', category: 'command', isBuiltIn: true, createdAt: '' },
+  { id: '__clear', label: '/clear', value: '/clear', category: 'command', isBuiltIn: true, createdAt: '' },
+  { id: '__help', label: '/help', value: '/help', category: 'command', isBuiltIn: true, createdAt: '' },
+  { id: '__review', label: 'Code Review', value: 'Please review the recent changes and provide feedback on code quality, potential bugs, and improvements.', category: 'review', isBuiltIn: true, createdAt: '' },
+  { id: '__test', label: 'Run Tests', value: 'Run the test suite and report any failures.', category: 'dev', isBuiltIn: true, createdAt: '' },
+  { id: '__build', label: 'Build & Lint', value: 'Run npm run build && npm run lint and fix any issues found.', category: 'dev', isBuiltIn: true, createdAt: '' },
+  { id: '__git', label: 'Git Status', value: 'Show me the current git status and recent changes.', category: 'git', isBuiltIn: true, createdAt: '' },
+  { id: '__summary', label: 'Summarize', value: 'Please summarize what you have done so far in this session.', category: 'info', isBuiltIn: true, createdAt: '' }
 ]
 
 const MIN_HEIGHT = 38
@@ -35,6 +32,7 @@ const historyMap = new Map<string, string[]>()
 
 export function Composer({ agentId, disabled = false, className }: ComposerProps): JSX.Element {
   const { t } = useTranslation()
+  const { templates, addTemplate, updateTemplate: storeUpdateTemplate, removeTemplate } = useAppStore()
   const [value, setValue] = useState('')
   const [showTemplates, setShowTemplates] = useState(false)
   const [historyIndex, setHistoryIndex] = useState(-1)
@@ -42,6 +40,14 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
     const saved = localStorage.getItem('composerHeight')
     return saved ? parseInt(saved) : 0
   })
+  const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [formLabel, setFormLabel] = useState('')
+  const [formValue, setFormValue] = useState('')
+  const [formCategory, setFormCategory] = useState('custom')
+  const [attachedFiles, setAttachedFiles] = useState<string[]>([])
+  const [templateFilter, setTemplateFilter] = useState('')
+  const [isDragOver, setIsDragOver] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const templatesRef = useRef<HTMLDivElement>(null)
   const savedDraft = useRef('')
@@ -50,6 +56,14 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
   const dragStartHeight = useRef(0)
 
   const effectiveMaxHeight = customMaxHeight > 0 ? customMaxHeight : DEFAULT_MAX_HEIGHT
+
+  // Merge built-in + custom templates, filtered
+  const allTemplates = useMemo(() => {
+    const merged = [...BUILTIN_TEMPLATES, ...templates]
+    if (!templateFilter.trim()) return merged
+    const q = templateFilter.toLowerCase()
+    return merged.filter(t => t.label.toLowerCase().includes(q) || t.category.toLowerCase().includes(q))
+  }, [templates, templateFilter])
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim()
@@ -65,20 +79,24 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
     setHistoryIndex(-1)
     savedDraft.current = ''
 
+    // Prepend attached files as context
+    const fullMessage = attachedFiles.length > 0
+      ? `Files: ${attachedFiles.join(', ')}\n\n${trimmed}`
+      : trimmed
+
     // Send text to PTY, then send carriage return separately after a short delay.
-    // Sending them together in a single write can cause Claude CLI's readline
-    // to not process the \r as an Enter keystroke.
-    window.api.ptyWrite(agentId, trimmed)
+    window.api.ptyWrite(agentId, fullMessage)
     setTimeout(() => {
       window.api.ptyWrite(agentId, '\r')
     }, 50)
     setValue('')
+    setAttachedFiles([])
 
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
-  }, [agentId, value, disabled])
+  }, [agentId, value, disabled, attachedFiles])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -142,12 +160,59 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
     textareaRef.current?.focus()
   }, [])
 
+  // Create new template
+  const handleCreateTemplate = useCallback(async () => {
+    if (!formLabel.trim() || !formValue.trim()) return
+    const created = await window.api.createTemplate({
+      label: formLabel.trim(),
+      value: formValue.trim(),
+      category: formCategory
+    })
+    addTemplate(created)
+    setFormLabel('')
+    setFormValue('')
+    setFormCategory('custom')
+    setShowCreateForm(false)
+  }, [formLabel, formValue, formCategory, addTemplate])
+
+  // Update existing template
+  const handleUpdateTemplate = useCallback(async () => {
+    if (!editingTemplate || !formLabel.trim() || !formValue.trim()) return
+    const updated = await window.api.updateTemplate(editingTemplate.id, {
+      label: formLabel.trim(),
+      value: formValue.trim(),
+      category: formCategory
+    })
+    storeUpdateTemplate(editingTemplate.id, updated)
+    setEditingTemplate(null)
+    setFormLabel('')
+    setFormValue('')
+    setFormCategory('custom')
+  }, [editingTemplate, formLabel, formValue, formCategory, storeUpdateTemplate])
+
+  // Delete template
+  const handleDeleteTemplate = useCallback(async (id: string) => {
+    await window.api.deleteTemplate(id)
+    removeTemplate(id)
+  }, [removeTemplate])
+
+  // Start editing
+  const startEdit = useCallback((tmpl: PromptTemplate) => {
+    setEditingTemplate(tmpl)
+    setFormLabel(tmpl.label)
+    setFormValue(tmpl.value)
+    setFormCategory(tmpl.category)
+    setShowCreateForm(false)
+  }, [])
+
   // Close templates on outside click
   useEffect(() => {
     if (!showTemplates) return
     const handler = (e: MouseEvent): void => {
       if (templatesRef.current && !templatesRef.current.contains(e.target as Node)) {
         setShowTemplates(false)
+        setShowCreateForm(false)
+        setEditingTemplate(null)
       }
     }
     document.addEventListener('mousedown', handler)
@@ -198,18 +263,29 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
     }
   }, [])
 
+  const categoryBadge = (cat: string): string => {
+    switch (cat) {
+      case 'command': return 'bg-blue-500/20 text-blue-400'
+      case 'review': return 'bg-yellow-500/20 text-yellow-400'
+      case 'git': return 'bg-green-500/20 text-green-400'
+      case 'dev': return 'bg-muted text-muted-foreground'
+      case 'custom': return 'bg-purple-500/20 text-purple-400'
+      default: return 'bg-muted text-muted-foreground'
+    }
+  }
+
   return (
     <div
-      className={cn('border-t border-border/50 bg-card/80 backdrop-blur-sm', className)}
-      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-primary/50') }}
-      onDragLeave={(e) => { e.currentTarget.classList.remove('ring-2', 'ring-primary/50') }}
+      className={cn('border-t border-border/50 bg-card/80 backdrop-blur-sm transition-all', isDragOver && 'ring-2 ring-primary/50 bg-primary/5', className)}
+      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+      onDragLeave={() => setIsDragOver(false)}
       onDrop={(e) => {
         e.preventDefault()
-        e.currentTarget.classList.remove('ring-2', 'ring-primary/50')
+        setIsDragOver(false)
         const files = Array.from(e.dataTransfer.files)
         if (files.length > 0) {
-          const paths = files.map((f) => (f as unknown as { path?: string }).path).filter(Boolean).join('\n')
-          if (paths) setValue((v) => v + (v ? '\n' : '') + paths)
+          const paths = files.map((f) => (f as unknown as { path?: string }).path).filter(Boolean) as string[]
+          if (paths.length > 0) setAttachedFiles((prev) => [...new Set([...prev, ...paths])])
         }
       }}
     >
@@ -221,6 +297,21 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
       >
         <GripHorizontal size={12} className="text-muted-foreground/30 group-hover:text-muted-foreground/60" />
       </div>
+      {/* Attached files chips */}
+      {attachedFiles.length > 0 && (
+        <div className="flex flex-wrap gap-1 px-3 pb-1">
+          {attachedFiles.map((fp) => {
+            const name = fp.split(/[\\/]/).pop() ?? fp
+            return (
+              <div key={fp} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] animate-in fade-in slide-in-from-bottom-1 duration-200">
+                <Paperclip size={9} />
+                <span className="max-w-[120px] truncate" title={fp}>{name}</span>
+                <button onClick={() => setAttachedFiles((prev) => prev.filter((p) => p !== fp))} className="hover:text-destructive"><X size={9} /></button>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="flex items-end gap-2 p-2 pt-0">
         <textarea
@@ -273,32 +364,117 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
         <span>Shift+Enter {t('composer.forNewline', 'for newline')}</span>
         <div className="relative ml-auto" ref={templatesRef}>
           <button
-            onClick={() => setShowTemplates((v) => !v)}
+            onClick={() => { setShowTemplates((v) => !v); setShowCreateForm(false); setEditingTemplate(null) }}
             className="flex items-center gap-1 cursor-pointer hover:text-muted-foreground/80"
           >
             {showTemplates ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
             <span>{t('composer.templates', 'Templates')}</span>
           </button>
           {showTemplates && (
-            <div className="absolute bottom-full right-0 mb-1 w-64 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
-              {TEMPLATES.map((tmpl) => (
+            <div className="absolute bottom-full right-0 mb-1 w-80 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
+              {/* Search filter */}
+              <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
+                <Search size={11} className="text-muted-foreground/50 shrink-0" />
+                <input
+                  value={templateFilter}
+                  onChange={(e) => setTemplateFilter(e.target.value)}
+                  placeholder="Search templates..."
+                  className="flex-1 text-xs bg-transparent focus:outline-none placeholder:text-muted-foreground/40"
+                  autoFocus
+                />
+              </div>
+              {/* Template list */}
+              <div className="max-h-[240px] overflow-y-auto">
+                {allTemplates.map((tmpl) => (
+                  <div
+                    key={tmpl.id}
+                    className="group flex items-center gap-1 px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+                  >
+                    <button
+                      onClick={() => handleTemplate(tmpl)}
+                      className="flex-1 flex items-center gap-2 text-left min-w-0"
+                    >
+                      <span className={cn('text-[9px] px-1 py-0.5 rounded shrink-0', categoryBadge(tmpl.category))}>
+                        {tmpl.category}
+                      </span>
+                      <span className="truncate">{tmpl.label}</span>
+                    </button>
+                    {!tmpl.isBuiltIn && (
+                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); startEdit(tmpl) }}
+                          className="p-0.5 rounded hover:bg-accent"
+                          title="Edit"
+                        >
+                          <Pencil size={10} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(tmpl.id) }}
+                          className="p-0.5 rounded hover:bg-destructive/20 text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Create / Edit form */}
+              {(showCreateForm || editingTemplate) ? (
+                <div className="border-t border-border p-2 space-y-1.5">
+                  <input
+                    value={formLabel}
+                    onChange={(e) => setFormLabel(e.target.value)}
+                    placeholder="Template name"
+                    className="w-full text-xs px-2 py-1 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                  <textarea
+                    value={formValue}
+                    onChange={(e) => setFormValue(e.target.value)}
+                    placeholder="Template content..."
+                    rows={3}
+                    className="w-full text-xs px-2 py-1 rounded border border-border bg-background resize-none focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={formCategory}
+                      onChange={(e) => setFormCategory(e.target.value)}
+                      className="text-xs px-2 py-1 rounded border border-border bg-background"
+                    >
+                      <option value="custom">Custom</option>
+                      <option value="dev">Dev</option>
+                      <option value="review">Review</option>
+                      <option value="git">Git</option>
+                      <option value="info">Info</option>
+                    </select>
+                    <div className="flex gap-1 ml-auto">
+                      <button
+                        onClick={() => { setShowCreateForm(false); setEditingTemplate(null) }}
+                        className="text-xs px-2 py-1 rounded border border-border hover:bg-accent"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={editingTemplate ? handleUpdateTemplate : handleCreateTemplate}
+                        disabled={!formLabel.trim() || !formValue.trim()}
+                        className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        {editingTemplate ? 'Update' : 'Create'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
                 <button
-                  key={tmpl.label}
-                  onClick={() => handleTemplate(tmpl)}
-                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors flex items-center gap-2"
+                  onClick={() => { setShowCreateForm(true); setFormLabel(''); setFormValue(''); setFormCategory('custom') }}
+                  className="w-full flex items-center gap-1 px-3 py-2 text-xs text-muted-foreground hover:bg-muted/50 transition-colors border-t border-border"
                 >
-                  <span className={cn(
-                    'text-[9px] px-1 py-0.5 rounded',
-                    tmpl.category === 'command' ? 'bg-blue-500/20 text-blue-400' :
-                    tmpl.category === 'review' ? 'bg-yellow-500/20 text-yellow-400' :
-                    tmpl.category === 'git' ? 'bg-green-500/20 text-green-400' :
-                    'bg-muted text-muted-foreground'
-                  )}>
-                    {t(`composer.category.${tmpl.category}`, tmpl.category)}
-                  </span>
-                  <span className="truncate">{tmpl.label}</span>
+                  <Plus size={12} />
+                  <span>{t('composer.addTemplate', 'New Template')}</span>
                 </button>
-              ))}
+              )}
             </div>
           )}
         </div>

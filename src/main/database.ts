@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync } from 'fs'
 import { v4 as uuidv4 } from 'uuid'
-import type { Agent, Team, Message, TaskChain, Broadcast, CreateAgentParams, TeamStats, Workspace, CreateWorkspaceParams } from '@shared/types'
+import type { Agent, Team, Message, TaskChain, Broadcast, CreateAgentParams, TeamStats, Workspace, CreateWorkspaceParams, Task, TaskStatus, PromptTemplate } from '@shared/types'
 
 interface WindowBounds {
   x?: number
@@ -33,6 +33,8 @@ interface DBData {
   taskChains: TaskChain[]
   broadcasts: Broadcast[]
   workspaces: Workspace[]
+  tasks: Task[]
+  promptTemplates: PromptTemplate[]
   activeWorkspaceId: string | null
   settings: AppSettings
   nextMessageId: number
@@ -66,6 +68,8 @@ export class Database {
       taskChains: [],
       broadcasts: [],
       workspaces: [],
+      tasks: [],
+      promptTemplates: [],
       activeWorkspaceId: null,
       settings: {
         usePtyMode: true,
@@ -87,6 +91,8 @@ export class Database {
     if (!Array.isArray(raw.messages)) raw.messages = []
     if (!Array.isArray(raw.taskChains)) raw.taskChains = []
     if (!Array.isArray(raw.broadcasts)) raw.broadcasts = []
+    if (!Array.isArray(raw.tasks)) raw.tasks = []
+    if (!Array.isArray(raw.promptTemplates)) raw.promptTemplates = []
     if (typeof raw.nextMessageId !== 'number') raw.nextMessageId = 1
     if (!raw.settings || typeof raw.settings !== 'object') {
       raw.settings = { usePtyMode: true, notifications: { enabled: true, taskComplete: true, approvalRequired: true, errors: true }, composerHeight: 0 }
@@ -202,7 +208,7 @@ export class Database {
     const allowedFields = ['name', 'icon', 'roleLabel', 'status', 'currentTask', 'systemPrompt', 'claudeSessionId', 'isPinned', 'skills', 'teamId', 'reportTo']
     for (const [key, value] of Object.entries(updates)) {
       if (allowedFields.includes(key)) {
-        (agent as Record<string, unknown>)[key] = value
+        ;(agent as unknown as Record<string, unknown>)[key] = value
       }
     }
     agent.updatedAt = new Date().toISOString()
@@ -314,6 +320,45 @@ export class Database {
     this.save()
   }
 
+  // Tasks
+  createTask(title: string, description?: string, status: TaskStatus = 'todo', agentId?: string): Task {
+    const task: Task = {
+      id: uuidv4(),
+      title,
+      description,
+      status,
+      agentId: agentId || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    this.data.tasks.push(task)
+    this.save()
+    return task
+  }
+
+  getTasks(): Task[] {
+    return this.data.tasks || []
+  }
+
+  updateTask(id: string, updates: Partial<Task>): Task {
+    const task = this.data.tasks.find(t => t.id === id)
+    if (!task) throw new Error(`Task ${id} not found`)
+    
+    if (updates.title !== undefined) task.title = updates.title
+    if (updates.description !== undefined) task.description = updates.description
+    if (updates.status !== undefined) task.status = updates.status
+    if (updates.agentId !== undefined) task.agentId = updates.agentId
+    task.updatedAt = new Date().toISOString()
+    
+    this.save()
+    return task
+  }
+
+  deleteTask(id: string): void {
+    this.data.tasks = this.data.tasks.filter((t) => t.id !== id)
+    this.save()
+  }
+
   // Team Stats
   getTeamStats(): TeamStats {
     const agents = this.getAgents()
@@ -360,7 +405,7 @@ export class Database {
     const allowedFields = ['name', 'color', 'connectionType', 'sshConfig', 'configStorageLocation', 'isActive']
     for (const [key, value] of Object.entries(updates)) {
       if (allowedFields.includes(key)) {
-        (ws as Record<string, unknown>)[key] = value
+        ;(ws as unknown as Record<string, unknown>)[key] = value
       }
     }
     ws.updatedAt = new Date().toISOString()
@@ -400,6 +445,43 @@ export class Database {
   }
 
   close(): void {
+    this.save()
+  }
+
+  // Prompt Templates
+  createTemplate(params: { label: string; value: string; category: string }): PromptTemplate {
+    const template: PromptTemplate = {
+      id: uuidv4(),
+      label: params.label,
+      value: params.value,
+      category: params.category,
+      isBuiltIn: false,
+      createdAt: new Date().toISOString()
+    }
+    this.data.promptTemplates.push(template)
+    this.save()
+    return template
+  }
+
+  getTemplates(): PromptTemplate[] {
+    return this.data.promptTemplates
+  }
+
+  updateTemplate(id: string, updates: Partial<PromptTemplate>): PromptTemplate {
+    const tmpl = this.data.promptTemplates.find((t) => t.id === id)
+    if (!tmpl) throw new Error(`Template ${id} not found`)
+    const allowedFields = ['label', 'value', 'category']
+    for (const [key, value] of Object.entries(updates)) {
+      if (allowedFields.includes(key)) {
+        ;(tmpl as unknown as Record<string, unknown>)[key] = value
+      }
+    }
+    this.save()
+    return tmpl
+  }
+
+  deleteTemplate(id: string): void {
+    this.data.promptTemplates = this.data.promptTemplates.filter((t) => t.id !== id)
     this.save()
   }
 }

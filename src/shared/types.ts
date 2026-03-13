@@ -65,6 +65,42 @@ export interface TaskChain {
   createdAt: string
 }
 
+export interface PromptTemplate {
+  id: string
+  label: string
+  value: string
+  category: string
+  isBuiltIn: boolean
+  createdAt: string
+}
+
+export interface McpServerConfig {
+  command: string
+  args?: string[]
+  env?: Record<string, string>
+}
+
+export interface McpConfig {
+  mcpServers: Record<string, McpServerConfig>
+}
+
+export interface PermissionSettings {
+  allowedTools: string[]
+  deniedTools: string[]
+}
+
+export type TaskStatus = 'todo' | 'in_progress' | 'done'
+
+export interface Task {
+  id: string
+  title: string
+  description?: string
+  status: TaskStatus
+  agentId?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Broadcast {
   id: string
   messageTemplate: string
@@ -243,11 +279,31 @@ export interface ElectronAPI {
   updateTeam: (id: string, updates: Partial<Team>) => Promise<Team>
   deleteTeam: (id: string) => Promise<void>
 
+  // Tasks
+  createTask: (title: string, description?: string, status?: TaskStatus, agentId?: string) => Promise<Task>
+  getTasks: () => Promise<Task[]>
+  updateTask: (id: string, updates: Partial<Task>) => Promise<Task>
+  deleteTask: (id: string) => Promise<void>
+
+  // Prompt Templates
+  createTemplate: (template: Omit<PromptTemplate, 'id' | 'createdAt' | 'isBuiltIn'>) => Promise<PromptTemplate>
+  getTemplates: () => Promise<PromptTemplate[]>
+  updateTemplate: (id: string, updates: Partial<PromptTemplate>) => Promise<PromptTemplate>
+  deleteTemplate: (id: string) => Promise<void>
+
   // Team stats
   getTeamStats: () => Promise<TeamStats>
 
   // Dialog
   selectFolder: () => Promise<string | null>
+
+  // Config files (B-1 to B-4)
+  getMcpConfig: (scope: 'global' | 'project', projectPath?: string) => Promise<McpConfig>
+  updateMcpConfig: (scope: 'global' | 'project', config: McpConfig, projectPath?: string) => Promise<void>
+  getClaudeMd: (projectPath: string) => Promise<string>
+  saveClaudeMd: (projectPath: string, content: string) => Promise<void>
+  getPermissions: () => Promise<PermissionSettings>
+  updatePermissions: (permissions: PermissionSettings) => Promise<void>
 
   // Events
   onAgentOutput: (callback: (agentId: string, message: ParsedOutputMessage) => void) => () => void
