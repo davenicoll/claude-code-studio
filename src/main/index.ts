@@ -11,7 +11,49 @@ import { scanWorkspaces, scanRemoteWorkspaces } from './workspace-scanner'
 import { readAgentProfile, readFileContent } from './claude-config-reader'
 import { SshSessionManager } from './ssh-session-manager'
 import { initMainI18n, t } from './i18n'
-import type { CreateAgentParams } from '@shared/types'
+import type { CreateAgentParams, CliSessionInfo } from '@shared/types'
+
+// Track previous status per agent to detect task completion (thinking/tool_running → active)
+const prevAgentStatus = new Map<string, string>()
+
+function sendNotification(agentId: string, type: 'awaiting' | 'error' | 'taskComplete'): void {
+  const settings = database.getSettings()
+  const ns = settings.notifications
+  if (!ns.enabled) return
+  if (type === 'awaiting' && !ns.approvalRequired) return
+  if (type === 'error' && !ns.errors) return
+  if (type === 'taskComplete' && !ns.taskComplete) return
+
+  const agent = database.getAgent(agentId)
+  if (!agent) return
+
+  const titles: Record<string, string> = {
+    awaiting: 'Approval Required',
+    error: 'Error Occurred',
+    taskComplete: 'Task Complete'
+  }
+  const title = titles[type]
+  const body = `${agent.name}: ${agent.currentTask || (type === 'taskComplete' ? 'Ready for input' : 'Check agent for details')}`
+  new Notification({ title, body }).show()
+  mainWindow?.webContents.send('notification', title, body)
+}
+
+function handleStatusChangeWithNotification(agentId: string, status: string): void {
+  mainWindow?.webContents.send('agent:status-change', agentId, status)
+  chainOrchestrator?.handleStatusChange(agentId, status)
+  updateTrayMenu()
+
+  const prev = prevAgentStatus.get(agentId)
+  prevAgentStatus.set(agentId, status)
+
+  if (status === 'awaiting') {
+    sendNotification(agentId, 'awaiting')
+  } else if (status === 'error') {
+    sendNotification(agentId, 'error')
+  } else if (status === 'active' && (prev === 'thinking' || prev === 'tool_running')) {
+    sendNotification(agentId, 'taskComplete')
+  }
+}
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -570,6 +612,46 @@ function setupIPC(): void {
     }
   })
 
+  // CLI session discovery
+  ipcMain.handle('session:list', async () => {
+    const claudePath = sessionManager['claudePath'] ?? 'claude'
+    try {
+      const { execFile: execFileCb } = await import('child_process')
+      return new Promise<CliSessionInfo[]>((resolve) => {
+        const useShell = process.platform === 'win32'
+        execFileCb(claudePath, ['session', 'list', '--format', 'json'], { shell: useShell, timeout: 10000 }, (err, stdout) => {
+          if (err || !stdout.trim()) {
+            resolve([])
+            return
+          }
+          try {
+            const sessions = JSON.parse(stdout.trim())
+            if (Array.isArray(sessions)) {
+              resolve(sessions.map((s: Record<string, unknown>) => ({
+                sessionId: String(s.session_id ?? s.sessionId ?? s.id ?? ''),
+                projectPath: String(s.project_path ?? s.projectPath ?? s.cwd ?? ''),
+                model: String(s.model ?? ''),
+                createdAt: String(s.created_at ?? s.createdAt ?? ''),
+                lastActiveAt: String(s.last_active_at ?? s.lastActiveAt ?? s.updated_at ?? '')
+              })))
+            } else {
+              resolve([])
+            }
+          } catch {
+            resolve([])
+          }
+        })
+      })
+    } catch {
+      return []
+    }
+  })
+
+  ipcMain.handle('session:attach', async (_event, agentId: string, sessionId: string) => {
+    if (typeof agentId !== 'string' || typeof sessionId !== 'string') throw new Error('Invalid parameters')
+    database.updateAgent(agentId, { claudeSessionId: sessionId })
+  })
+
   ipcMain.handle('app:titlebar-theme', (_event, isDark: boolean) => {
     if (!mainWindow) return
     mainWindow.setTitleBarOverlay({
@@ -622,18 +704,7 @@ app.whenReady().then(() => {
       chainOrchestrator.handleAgentOutput(agentId, message.content)
     }
   }, (agentId, status) => {
-    mainWindow?.webContents.send('agent:status-change', agentId, status)
-    chainOrchestrator.handleStatusChange(agentId, status)
-    updateTrayMenu()
-    if (status === 'awaiting' || status === 'error') {
-      const agent = database.getAgent(agentId)
-      if (agent) {
-        const title = status === 'awaiting' ? 'Approval Required' : 'Error Occurred'
-        const body = `${agent.name}: ${agent.currentTask || 'Check agent for details'}`
-        new Notification({ title, body }).show()
-        mainWindow?.webContents.send('notification', title, body)
-      }
-    }
+    handleStatusChangeWithNotification(agentId, status)
   })
 
   ptySessionManager = new PtySessionManager(
@@ -642,18 +713,7 @@ app.whenReady().then(() => {
       mainWindow?.webContents.send('pty:data', agentId, data)
     },
     (agentId, status) => {
-      mainWindow?.webContents.send('agent:status-change', agentId, status)
-      chainOrchestrator.handleStatusChange(agentId, status)
-      updateTrayMenu()
-      if (status === 'awaiting' || status === 'error') {
-        const agent = database.getAgent(agentId)
-        if (agent) {
-          const title = status === 'awaiting' ? 'Approval Required' : 'Error Occurred'
-          const body = `${agent.name}: ${agent.currentTask || 'Check agent for details'}`
-          new Notification({ title, body }).show()
-          mainWindow?.webContents.send('notification', title, body)
-        }
-      }
+      handleStatusChangeWithNotification(agentId, status)
     },
     (agentId, exitCode) => {
       mainWindow?.webContents.send('pty:exit', agentId, exitCode)
@@ -666,18 +726,7 @@ app.whenReady().then(() => {
       mainWindow?.webContents.send('pty:data', agentId, data)
     },
     (agentId, status) => {
-      mainWindow?.webContents.send('agent:status-change', agentId, status)
-      chainOrchestrator?.handleStatusChange(agentId, status)
-      updateTrayMenu()
-      if (status === 'awaiting' || status === 'error') {
-        const agent = database.getAgent(agentId)
-        if (agent) {
-          const title = status === 'awaiting' ? 'Approval Required' : 'Error Occurred'
-          const body = `${agent.name}: ${agent.currentTask || 'Check agent for details'}`
-          new Notification({ title, body }).show()
-          mainWindow?.webContents.send('notification', title, body)
-        }
-      }
+      handleStatusChangeWithNotification(agentId, status)
     },
     (agentId, exitCode) => {
       mainWindow?.webContents.send('pty:exit', agentId, exitCode)

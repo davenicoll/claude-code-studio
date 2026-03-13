@@ -12,9 +12,18 @@ interface WindowBounds {
   isMaximized?: boolean
 }
 
+interface NotificationSettings {
+  enabled: boolean
+  taskComplete: boolean
+  approvalRequired: boolean
+  errors: boolean
+}
+
 interface AppSettings {
   usePtyMode: boolean
   windowBounds?: WindowBounds
+  notifications: NotificationSettings
+  composerHeight: number
 }
 
 interface DBData {
@@ -58,7 +67,11 @@ export class Database {
       broadcasts: [],
       workspaces: [],
       activeWorkspaceId: null,
-      settings: { usePtyMode: true },
+      settings: {
+        usePtyMode: true,
+        notifications: { enabled: true, taskComplete: true, approvalRequired: true, errors: true },
+        composerHeight: 0
+      },
       nextMessageId: 1,
       sessionScrollbacks: {}
     }
@@ -76,7 +89,14 @@ export class Database {
     if (!Array.isArray(raw.broadcasts)) raw.broadcasts = []
     if (typeof raw.nextMessageId !== 'number') raw.nextMessageId = 1
     if (!raw.settings || typeof raw.settings !== 'object') {
-      raw.settings = { usePtyMode: true }
+      raw.settings = { usePtyMode: true, notifications: { enabled: true, taskComplete: true, approvalRequired: true, errors: true }, composerHeight: 0 }
+    }
+    const settings = raw.settings as Record<string, unknown>
+    if (!settings.notifications) {
+      settings.notifications = { enabled: true, taskComplete: true, approvalRequired: true, errors: true }
+    }
+    if (typeof settings.composerHeight !== 'number') {
+      settings.composerHeight = 0
     }
 
     // Backfill agent-level fields added after initial release

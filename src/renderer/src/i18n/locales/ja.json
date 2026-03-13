@@ -246,6 +246,7 @@
     "toSend": "で送信",
     "forNewline": "で改行",
     "templates": "テンプレート",
+    "dragResize": "ドラッグでリサイズ",
     "category": {
       "command": "コマンド",
       "review": "レビュー",
@@ -418,6 +419,16 @@
   },
   "session": {
     "conflictDetected": "セッション競合を検出。新しいセッションで再接続中...",
-    "conflictFailed": "このセッションは別のターミナルで使用中です。エージェントを再起動して新しいセッションを作成してください。"
+    "conflictFailed": "このセッションは別のターミナルで使用中です。エージェントを再起動して新しいセッションを作成してください。",
+    "recovery": "既存セッションに接続",
+    "attach": "接続",
+    "attaching": "接続中...",
+    "attached": "セッションに接続しました",
+    "attachFailed": "接続失敗: {{error}}",
+    "searchPlaceholder": "セッションID、パス、モデルで検索...",
+    "noSessions": "CLIセッションが見つかりません",
+    "noSessionsHint": "`claude` CLIのセッションがここに表示されます",
+    "currentProject": "このプロジェクト",
+    "hint": "ヒント: 競合を避けるため、先に他のターミナルでセッションを終了してください"
   }
 }

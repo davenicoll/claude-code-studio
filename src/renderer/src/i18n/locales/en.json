@@ -246,6 +246,7 @@
     "toSend": "to send",
     "forNewline": "for newline",
     "templates": "Templates",
+    "dragResize": "Drag to resize",
     "category": {
       "command": "Command",
       "review": "Review",
@@ -418,6 +419,16 @@
   },
   "session": {
     "conflictDetected": "Session conflict detected. Reconnecting with a new session...",
-    "conflictFailed": "This session is active in another terminal. Restart the agent to create a new session."
+    "conflictFailed": "This session is active in another terminal. Restart the agent to create a new session.",
+    "recovery": "Attach to Existing Session",
+    "attach": "Attach",
+    "attaching": "Attaching...",
+    "attached": "Session attached successfully",
+    "attachFailed": "Failed to attach: {{error}}",
+    "searchPlaceholder": "Search by session ID, path, or model...",
+    "noSessions": "No CLI sessions found",
+    "noSessionsHint": "Sessions from `claude` CLI will appear here",
+    "currentProject": "This project",
+    "hint": "Tip: Close the session in the other terminal first to avoid conflicts"
   }
 }

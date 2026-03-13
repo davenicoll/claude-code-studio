@@ -4,7 +4,7 @@ import { useAppStore } from '../stores/useAppStore'
 import type { Agent } from '@shared/types'
 import { cn } from '../lib/utils'
 import { getStatusDot, getInitials } from '../lib/status'
-import { Search, Plus, LayoutDashboard, Radio, PanelRight, Zap } from 'lucide-react'
+import { Search, Plus, LayoutDashboard, Radio, PanelRight, Zap, Link } from 'lucide-react'
 
 interface CommandItem {
   type: 'agent' | 'action'
@@ -30,7 +30,8 @@ export function QuickSearch(): JSX.Element | null {
       { type: 'action', id: 'new-agent', label: t('shortcuts.newAgent', 'New Agent'), description: 'Ctrl+N', icon: <Plus size={14} />, action: () => { document.dispatchEvent(new CustomEvent('app:new-agent')) } },
       { type: 'action', id: 'dashboard', label: t('shortcuts.toggleDashboard', 'Toggle Dashboard'), description: 'Ctrl+D', icon: <LayoutDashboard size={14} />, action: toggleDashboard },
       { type: 'action', id: 'broadcast', label: t('shortcuts.broadcast', 'Broadcast'), description: 'Ctrl+Shift+B', icon: <Radio size={14} />, action: toggleBroadcast },
-      { type: 'action', id: 'right-pane', label: t('shortcuts.toggleRightPane', 'Toggle Right Pane'), description: 'Ctrl+Shift+P', icon: <PanelRight size={14} />, action: toggleRightPane }
+      { type: 'action', id: 'right-pane', label: t('shortcuts.toggleRightPane', 'Toggle Right Pane'), description: 'Ctrl+Shift+P', icon: <PanelRight size={14} />, action: toggleRightPane },
+      { type: 'action', id: 'session-recovery', label: t('session.recovery', 'Attach to Existing Session'), description: '', icon: <Link size={14} />, action: () => { document.dispatchEvent(new CustomEvent('app:session-recovery')) } }
     ]
     const agentItems: CommandItem[] = agents
       .filter((a) => a.status !== 'archived')

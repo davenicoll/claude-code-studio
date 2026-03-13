@@ -181,6 +181,14 @@ export interface AgentProfileData {
   hooks: ClaudeHook[]
 }
 
+export interface CliSessionInfo {
+  sessionId: string
+  projectPath: string
+  model: string
+  createdAt: string
+  lastActiveAt: string
+}
+
 export interface AgentTemplate {
   name: string
   roleLabel: string | null
@@ -190,8 +198,17 @@ export interface AgentTemplate {
   appVersion: string
 }
 
+export interface NotificationSettings {
+  enabled: boolean
+  taskComplete: boolean
+  approvalRequired: boolean
+  errors: boolean
+}
+
 export interface AppSettings {
   usePtyMode: boolean
+  notifications: NotificationSettings
+  composerHeight: number
 }
 
 export interface ElectronAPI {
@@ -265,6 +282,10 @@ export interface ElectronAPI {
 
   // SSH
   testSshConnection: (config: { host: string; port: number; username: string; privateKeyPath?: string }) => Promise<{ success: boolean; message: string }>
+
+  // Sessions
+  listCliSessions: () => Promise<CliSessionInfo[]>
+  attachSession: (agentId: string, sessionId: string) => Promise<void>
 
   // Settings
   getSettings: () => Promise<AppSettings>

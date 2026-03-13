@@ -4,9 +4,10 @@ import { useAppStore } from '../stores/useAppStore'
 import { showToast } from './ToastContainer'
 import { cn } from '../lib/utils'
 import { getStatusBadge } from '../lib/status'
-import { RotateCw, Square, Terminal, AlertCircle, Pin, PinOff, Server } from 'lucide-react'
+import { RotateCw, Square, Terminal, AlertCircle, Pin, PinOff, Server, Link } from 'lucide-react'
 import { XtermTerminal } from './XtermTerminal'
 import { Composer } from './Composer'
+import { SessionRecoveryDialog } from './SessionRecoveryDialog'
 import type { Agent, Workspace } from '@shared/types'
 
 interface PtyTerminalViewProps {
@@ -14,7 +15,7 @@ interface PtyTerminalViewProps {
   compact?: boolean
 }
 
-function AgentHeader({ agent, compact, workspace }: { agent: Agent; compact: boolean; workspace: Workspace | null }): JSX.Element {
+function AgentHeader({ agent, compact, workspace, onRecoverSession }: { agent: Agent; compact: boolean; workspace: Workspace | null; onRecoverSession: () => void }): JSX.Element {
   const { t } = useTranslation()
   const updateAgentInList = useAppStore((s) => s.updateAgentInList)
 
@@ -83,6 +84,13 @@ function AgentHeader({ agent, compact, workspace }: { agent: Agent; compact: boo
       </div>
       <div className="flex items-center gap-1 shrink-0">
         <button
+          onClick={onRecoverSession}
+          className="p-1 rounded hover:bg-muted/50 text-muted-foreground/60 hover:text-cyan-400 transition-colors"
+          title={t('session.recovery', 'Attach to existing session')}
+        >
+          <Link size={12} />
+        </button>
+        <button
           onClick={togglePin}
           className="p-1 rounded hover:bg-muted/50 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
           title={agent.isPinned ? 'Unpin' : 'Pin'}
@@ -123,6 +131,7 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
   const [sessionExited, setSessionExited] = useState(false)
   const [exitCode, setExitCode] = useState<number | null>(null)
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
+  const [showRecovery, setShowRecovery] = useState(false)
 
   // Load workspace info for SSH badge
   useEffect(() => {
@@ -179,7 +188,7 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
 
   return (
     <div className="flex h-full flex-col">
-      <AgentHeader agent={agent} compact={compact} workspace={workspace} />
+      <AgentHeader agent={agent} compact={compact} workspace={workspace} onRecoverSession={() => setShowRecovery(true)} />
       <div className="flex-1 min-h-0">
         <XtermTerminal
           agentId={agentId}
@@ -208,6 +217,17 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
         agentId={agentId}
         disabled={isInputDisabled}
       />
+      {showRecovery && agent && (
+        <SessionRecoveryDialog
+          agentId={agentId}
+          projectPath={agent.projectPath}
+          onClose={() => setShowRecovery(false)}
+          onAttached={() => {
+            setShowRecovery(false)
+            handleRestartSession()
+          }}
+        />
+      )}
     </div>
   )
 }

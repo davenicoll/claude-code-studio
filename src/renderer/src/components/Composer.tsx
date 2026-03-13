@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, useEffect, type KeyboardEvent } from 'react'
-import { Send, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useRef, useCallback, useEffect, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { Send, X, ChevronDown, ChevronUp, GripHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +20,10 @@ const TEMPLATES: PromptTemplate[] = [
   { label: 'Summarize', value: 'Please summarize what you have done so far in this session.', category: 'info' }
 ]
 
+const MIN_HEIGHT = 38
+const MAX_HEIGHT = 400
+const DEFAULT_MAX_HEIGHT = 200
+
 interface ComposerProps {
   agentId: string
   disabled?: boolean
@@ -34,9 +38,18 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
   const [value, setValue] = useState('')
   const [showTemplates, setShowTemplates] = useState(false)
   const [historyIndex, setHistoryIndex] = useState(-1)
+  const [customMaxHeight, setCustomMaxHeight] = useState(() => {
+    const saved = localStorage.getItem('composerHeight')
+    return saved ? parseInt(saved) : 0
+  })
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const templatesRef = useRef<HTMLDivElement>(null)
   const savedDraft = useRef('')
+  const isDragging = useRef(false)
+  const dragStartY = useRef(0)
+  const dragStartHeight = useRef(0)
+
+  const effectiveMaxHeight = customMaxHeight > 0 ? customMaxHeight : DEFAULT_MAX_HEIGHT
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim()
@@ -107,9 +120,8 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
     if (!textarea) return
     // Auto-expand height
     textarea.style.height = 'auto'
-    const maxHeight = 200 // ~8 lines
-    textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`
-  }, [])
+    textarea.style.height = `${Math.min(textarea.scrollHeight, effectiveMaxHeight)}px`
+  }, [effectiveMaxHeight])
 
   const handleClear = useCallback(() => {
     setValue('')
@@ -137,6 +149,50 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
     return () => document.removeEventListener('mousedown', handler)
   }, [showTemplates])
 
+  // Drag resize handlers
+  const handleDragStart = useCallback((e: ReactMouseEvent) => {
+    e.preventDefault()
+    isDragging.current = true
+    dragStartY.current = e.clientY
+    const textarea = textareaRef.current
+    dragStartHeight.current = textarea ? textarea.offsetHeight : effectiveMaxHeight
+    document.body.style.cursor = 'ns-resize'
+    document.body.style.userSelect = 'none'
+  }, [effectiveMaxHeight])
+
+  useEffect(() => {
+    const handleMouseMove = (e: globalThis.MouseEvent): void => {
+      if (!isDragging.current) return
+      const delta = dragStartY.current - e.clientY
+      const newHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, dragStartHeight.current + delta))
+      setCustomMaxHeight(newHeight)
+      if (textareaRef.current) {
+        textareaRef.current.style.height = `${newHeight}px`
+      }
+    }
+
+    const handleMouseUp = (): void => {
+      if (!isDragging.current) return
+      isDragging.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      // Persist
+      const textarea = textareaRef.current
+      if (textarea) {
+        const h = textarea.offsetHeight
+        localStorage.setItem('composerHeight', String(h))
+        window.api.updateSettings({ composerHeight: h })
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
+
   return (
     <div
       className={cn('border-t border-border/50 bg-card/80 backdrop-blur-sm', className)}
@@ -152,7 +208,16 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
         }
       }}
     >
-      <div className="flex items-end gap-2 p-2">
+      {/* Drag handle for resizing */}
+      <div
+        className="flex items-center justify-center h-3 cursor-ns-resize group hover:bg-border/30 transition-colors"
+        onMouseDown={handleDragStart}
+        title={t('composer.dragResize', 'Drag to resize')}
+      >
+        <GripHorizontal size={12} className="text-muted-foreground/30 group-hover:text-muted-foreground/60" />
+      </div>
+
+      <div className="flex items-end gap-2 p-2 pt-0">
         <textarea
           ref={textareaRef}
           data-composer-input
@@ -170,7 +235,7 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
             'disabled:opacity-50 disabled:cursor-not-allowed',
             'scrollbar-thin scrollbar-thumb-border'
           )}
-          style={{ minHeight: '38px', maxHeight: '200px' }}
+          style={{ minHeight: `${MIN_HEIGHT}px`, maxHeight: `${effectiveMaxHeight}px` }}
         />
         <div className="flex gap-1">
           {value && (
