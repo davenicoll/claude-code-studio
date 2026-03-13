@@ -1,4 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage, dialog } from 'electron'
+import { autoUpdater } from 'electron-updater'
+
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { SessionManager } from './session-manager'
@@ -599,6 +601,11 @@ process.on('unhandledRejection', (reason) => {
 app.whenReady().then(() => {
   initMainI18n()
   electronApp.setAppUserModelId('dev.wat-hiroaki.claude-code-desktop')
+
+  // 自動アップデート確認
+  if (!is.dev) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
