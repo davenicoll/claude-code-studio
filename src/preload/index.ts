@@ -33,11 +33,31 @@ const api: ElectronAPI = {
   updateTeam: (id, updates) => ipcRenderer.invoke('team:update', id, updates),
   deleteTeam: (id) => ipcRenderer.invoke('team:delete', id),
 
+  // Tasks
+  createTask: (title, description, status, agentId) => ipcRenderer.invoke('task:create', title, description, status, agentId),
+  getTasks: () => ipcRenderer.invoke('task:list'),
+  updateTask: (id, updates) => ipcRenderer.invoke('task:update', id, updates),
+  deleteTask: (id) => ipcRenderer.invoke('task:delete', id),
+
+  // Prompt Templates
+  createTemplate: (template) => ipcRenderer.invoke('template:create', template),
+  getTemplates: () => ipcRenderer.invoke('template:list'),
+  updateTemplate: (id, updates) => ipcRenderer.invoke('template:update', id, updates),
+  deleteTemplate: (id) => ipcRenderer.invoke('template:delete', id),
+
   // Team stats
   getTeamStats: () => ipcRenderer.invoke('team:stats'),
 
   // Dialog
   selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
+
+  // Config files (B-1 to B-4)
+  getMcpConfig: (scope, projectPath) => ipcRenderer.invoke('config:getMcp', scope, projectPath),
+  updateMcpConfig: (scope, config, projectPath) => ipcRenderer.invoke('config:updateMcp', scope, config, projectPath),
+  getClaudeMd: (projectPath) => ipcRenderer.invoke('config:getClaudeMd', projectPath),
+  saveClaudeMd: (projectPath, content) => ipcRenderer.invoke('config:saveClaudeMd', projectPath, content),
+  getPermissions: () => ipcRenderer.invoke('config:getPermissions'),
+  updatePermissions: (permissions) => ipcRenderer.invoke('config:updatePermissions', permissions),
 
   // Events
   onAgentOutput: (callback) => {

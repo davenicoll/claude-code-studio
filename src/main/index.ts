@@ -40,7 +40,7 @@ function sendNotification(agentId: string, type: 'awaiting' | 'error' | 'taskCom
 
 function handleStatusChangeWithNotification(agentId: string, status: string): void {
   mainWindow?.webContents.send('agent:status-change', agentId, status)
-  chainOrchestrator?.handleStatusChange(agentId, status)
+  chainOrchestrator?.handleStatusChange(agentId, status as any)
   updateTrayMenu()
 
   const prev = prevAgentStatus.get(agentId)
@@ -125,7 +125,7 @@ function createWindow(): void {
 
   // Minimize to tray instead of closing
   mainWindow.on('close', (e) => {
-    if (!app.isQuitting) {
+    if (!(app as any).isQuitting) {
       e.preventDefault()
       mainWindow?.hide()
     }
@@ -195,7 +195,7 @@ function updateTrayMenu(): void {
     {
       label: t('tray.quit'),
       click: () => {
-        app.isQuitting = true
+        ;(app as any).isQuitting = true
         app.quit()
       }
     }
@@ -404,6 +404,46 @@ function setupIPC(): void {
     return database.deleteTeam(id)
   })
 
+  // Tasks
+  ipcMain.handle('task:create', (_event, title: string, description?: string, status?: import('@shared/types').TaskStatus, agentId?: string) => {
+    if (typeof title !== 'string' || !title.trim()) throw new Error('Task title is required')
+    return database.createTask(title.trim(), description, status, agentId)
+  })
+
+  ipcMain.handle('task:list', () => {
+    return database.getTasks()
+  })
+
+  ipcMain.handle('task:update', (_event, id: string, updates: Partial<import('@shared/types').Task>) => {
+    if (typeof id !== 'string') throw new Error('Invalid task ID')
+    return database.updateTask(id, updates)
+  })
+
+  ipcMain.handle('task:delete', (_event, id: string) => {
+    if (typeof id !== 'string') throw new Error('Invalid task ID')
+    return database.deleteTask(id)
+  })
+
+  // Prompt Templates
+  ipcMain.handle('template:create', (_event, template: { label: string; value: string; category: string }) => {
+    if (!template?.label?.trim()) throw new Error('Template label is required')
+    return database.createTemplate({ label: template.label.trim(), value: template.value, category: template.category })
+  })
+
+  ipcMain.handle('template:list', () => {
+    return database.getTemplates()
+  })
+
+  ipcMain.handle('template:update', (_event, id: string, updates: Partial<import('@shared/types').PromptTemplate>) => {
+    if (typeof id !== 'string') throw new Error('Invalid template ID')
+    return database.updateTemplate(id, updates)
+  })
+
+  ipcMain.handle('template:delete', (_event, id: string) => {
+    if (typeof id !== 'string') throw new Error('Invalid template ID')
+    return database.deleteTemplate(id)
+  })
+
   // Team stats
   ipcMain.handle('team:stats', () => {
     return database.getTeamStats()
@@ -417,6 +457,88 @@ function setupIPC(): void {
     })
     if (result.canceled) return null
     return result.filePaths[0]
+  })
+
+  // Config files (B-1 to B-4)
+  ipcMain.handle('config:getMcp', async (_event, scope: string, projectPath?: string) => {
+    const { existsSync, readFileSync } = await import('fs')
+    const { homedir } = await import('os')
+    let configPath: string
+    if (scope === 'project' && projectPath) {
+      configPath = join(projectPath, '.mcp.json')
+    } else {
+      configPath = join(homedir(), '.claude', 'settings.json')
+    }
+    if (!existsSync(configPath)) return { mcpServers: {} }
+    try {
+      const raw = JSON.parse(readFileSync(configPath, 'utf-8'))
+      return { mcpServers: raw.mcpServers ?? {} }
+    } catch {
+      return { mcpServers: {} }
+    }
+  })
+
+  ipcMain.handle('config:updateMcp', async (_event, scope: string, config: { mcpServers: Record<string, unknown> }, projectPath?: string) => {
+    const { existsSync, readFileSync, writeFileSync, mkdirSync } = await import('fs')
+    const { homedir } = await import('os')
+    const { dirname } = await import('path')
+    let configPath: string
+    if (scope === 'project' && projectPath) {
+      configPath = join(projectPath, '.mcp.json')
+    } else {
+      configPath = join(homedir(), '.claude', 'settings.json')
+    }
+    let existing: Record<string, unknown> = {}
+    if (existsSync(configPath)) {
+      try { existing = JSON.parse(readFileSync(configPath, 'utf-8')) } catch { /* ignore */ }
+    }
+    existing.mcpServers = config.mcpServers
+    mkdirSync(dirname(configPath), { recursive: true })
+    writeFileSync(configPath, JSON.stringify(existing, null, 2), 'utf-8')
+  })
+
+  ipcMain.handle('config:getClaudeMd', async (_event, projectPath: string) => {
+    const { existsSync, readFileSync } = await import('fs')
+    const mdPath = join(projectPath, 'CLAUDE.md')
+    if (!existsSync(mdPath)) return ''
+    return readFileSync(mdPath, 'utf-8')
+  })
+
+  ipcMain.handle('config:saveClaudeMd', async (_event, projectPath: string, content: string) => {
+    const { writeFileSync } = await import('fs')
+    const mdPath = join(projectPath, 'CLAUDE.md')
+    writeFileSync(mdPath, content, 'utf-8')
+  })
+
+  ipcMain.handle('config:getPermissions', async () => {
+    const { existsSync, readFileSync } = await import('fs')
+    const { homedir } = await import('os')
+    const settingsPath = join(homedir(), '.claude', 'settings.json')
+    if (!existsSync(settingsPath)) return { allowedTools: [], deniedTools: [] }
+    try {
+      const raw = JSON.parse(readFileSync(settingsPath, 'utf-8'))
+      return {
+        allowedTools: raw.allowedTools ?? [],
+        deniedTools: raw.deniedTools ?? []
+      }
+    } catch {
+      return { allowedTools: [], deniedTools: [] }
+    }
+  })
+
+  ipcMain.handle('config:updatePermissions', async (_event, permissions: { allowedTools: string[]; deniedTools: string[] }) => {
+    const { existsSync, readFileSync, writeFileSync, mkdirSync } = await import('fs')
+    const { homedir } = await import('os')
+    const { dirname } = await import('path')
+    const settingsPath = join(homedir(), '.claude', 'settings.json')
+    let existing: Record<string, unknown> = {}
+    if (existsSync(settingsPath)) {
+      try { existing = JSON.parse(readFileSync(settingsPath, 'utf-8')) } catch { /* ignore */ }
+    }
+    existing.allowedTools = permissions.allowedTools
+    existing.deniedTools = permissions.deniedTools
+    mkdirSync(dirname(settingsPath), { recursive: true })
+    writeFileSync(settingsPath, JSON.stringify(existing, null, 2), 'utf-8')
   })
 
   // App
@@ -661,13 +783,6 @@ function setupIPC(): void {
   })
 }
 
-// Extend app type for isQuitting flag
-declare module 'electron' {
-  interface App {
-    isQuitting?: boolean
-  }
-}
-
 // Global error handlers
 process.on('uncaughtException', (err) => {
   console.error('[Main] Uncaught exception:', err)
@@ -802,7 +917,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
-  app.isQuitting = true
+  ;(app as any).isQuitting = true
   sessionManager.stopAll()
   ptySessionManager.stopAll()
   sshSessionManager.stopAll()

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
-import { X, Moon, Sun, Monitor, Globe, Bell, Terminal, Database, FolderOpen } from 'lucide-react'
+import { X, Moon, Sun, Monitor, Globe, Bell, Terminal, Database, FolderOpen, Settings2 } from 'lucide-react'
 import { showToast } from './ToastContainer'
 import { cn } from '../lib/utils'
+import { ConfigPanel } from './ConfigPanel'
 
 interface SettingsModalProps {
   onClose: () => void
@@ -65,7 +66,7 @@ export function SettingsModal({ onClose }: SettingsModalProps): JSX.Element {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="bg-card border border-border rounded-xl w-[480px] max-h-[80vh] overflow-hidden shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-card border border-border rounded-xl w-[560px] max-h-[80vh] overflow-hidden shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-semibold">{t('settings.title')}</h3>
           <button onClick={onClose} className="p-1 rounded hover:bg-accent">
@@ -236,6 +237,17 @@ export function SettingsModal({ onClose }: SettingsModalProps): JSX.Element {
                 <FolderOpen size={12} />
                 Data Location
               </button>
+            </div>
+          </div>
+
+          {/* B-2 to B-4: Config Panel */}
+          <div>
+            <div className="flex items-center gap-2 text-sm font-medium mb-3">
+              <Settings2 size={16} />
+              {t('settings.advanced', 'Advanced Configuration')}
+            </div>
+            <div className="border border-border rounded-lg overflow-hidden h-[320px]">
+              <ConfigPanel />
             </div>
           </div>
 
