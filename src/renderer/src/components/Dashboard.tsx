@@ -12,9 +12,10 @@ import { OrgChart } from './OrgChart'
 import { SkillMap } from './SkillMap'
 import { KanbanBoard } from './KanbanBoard'
 import { ActivityMap } from './ActivityMap'
+import { ActivityStream } from './ActivityStream'
 import type { Team } from '@shared/types'
 
-type DashboardView = 'orgChart' | 'skillMap' | 'kanban' | 'activityMap'
+type DashboardView = 'orgChart' | 'skillMap' | 'kanban' | 'activityMap' | 'activityStream'
 
 interface DashboardProps {
   onOpenScanner?: () => void
@@ -61,7 +62,8 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
     { key: 'orgChart', icon: Network, label: t('teamMgmt.orgChart') },
     { key: 'skillMap', icon: BarChart3, label: t('teamMgmt.skillMap') },
     { key: 'kanban', icon: Columns3, label: t('teamMgmt.kanban') },
-    { key: 'activityMap', icon: Radar, label: t('teamMgmt.activityMap') }
+    { key: 'activityMap', icon: Radar, label: t('teamMgmt.activityMap') },
+    { key: 'activityStream', icon: Brain, label: 'Activity Stream' }
   ]
 
   const teamColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4']
@@ -212,8 +214,9 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
       <div className="min-h-[120px]">
         {activeView === 'orgChart' && <OrgChart teams={teams} onAgentClick={handleAgentClick} />}
         {activeView === 'skillMap' && <SkillMap onAgentClick={handleAgentClick} />}
-        {activeView === 'kanban' && <KanbanBoard teams={teams} onAgentClick={handleAgentClick} />}
+        {activeView === 'kanban' && <KanbanBoard />}
         {activeView === 'activityMap' && <ActivityMap teams={teams} onAgentClick={handleAgentClick} />}
+        {activeView === 'activityStream' && <ActivityStream className="h-[300px] relative" />}
       </div>
 
       {/* Activity Log */}

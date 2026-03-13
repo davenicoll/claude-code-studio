@@ -222,20 +222,34 @@ function ConnectionLines({
           </feMerge>
         </filter>
       </defs>
-      {lines.map((line, i) => (
-        <line
-          key={i}
-          x1={line.from.x}
-          y1={line.from.y}
-          x2={line.to.x}
-          y2={line.to.y}
-          stroke={statusFill[line.status]}
-          strokeWidth={1}
-          strokeDasharray="3 4"
-          opacity={0.35}
-          filter="url(#line-glow)"
-        />
-      ))}
+      {lines.map((line, i) => {
+        const isActive = ['active', 'thinking', 'tool_running'].includes(line.status)
+        return (
+          <g key={i}>
+            <line
+              x1={line.from.x}
+              y1={line.from.y}
+              x2={line.to.x}
+              y2={line.to.y}
+              stroke={statusFill[line.status]}
+              strokeWidth={1}
+              strokeDasharray="3 4"
+              opacity={0.35}
+              filter="url(#line-glow)"
+            />
+            {/* C-3: Flowing data particle */}
+            {isActive && (
+              <circle r={2} fill={statusFill[line.status]} opacity={0.8}>
+                <animateMotion
+                  dur={`${1.5 + i * 0.3}s`}
+                  repeatCount="indefinite"
+                  path={`M${line.from.x},${line.from.y} L${line.to.x},${line.to.y}`}
+                />
+              </circle>
+            )}
+          </g>
+        )
+      })}
     </g>
   )
 }
