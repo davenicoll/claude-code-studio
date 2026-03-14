@@ -141,10 +141,20 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
   const handleInput = useCallback(() => {
     const textarea = textareaRef.current
     if (!textarea) return
-    // Auto-expand height
-    textarea.style.height = 'auto'
-    textarea.style.height = `${Math.min(textarea.scrollHeight, effectiveMaxHeight)}px`
-  }, [effectiveMaxHeight])
+
+    if (customMaxHeight > 0) {
+      // User has manually set height via drag — respect it as minimum
+      // Only expand beyond custom height if content requires it
+      textarea.style.height = `${customMaxHeight}px`
+      if (textarea.scrollHeight > customMaxHeight) {
+        textarea.style.height = `${Math.min(textarea.scrollHeight, MAX_HEIGHT)}px`
+      }
+    } else {
+      // No custom height — auto-expand as before
+      textarea.style.height = 'auto'
+      textarea.style.height = `${Math.min(textarea.scrollHeight, DEFAULT_MAX_HEIGHT)}px`
+    }
+  }, [customMaxHeight])
 
   const handleClear = useCallback(() => {
     setValue('')
