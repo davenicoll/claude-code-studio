@@ -76,7 +76,7 @@ interface AgentNodeProps {
 function AgentNode({ agent, x, y, onClick }: AgentNodeProps): JSX.Element {
   const { t } = useTranslation()
   const glow = statusGlow[agent.status]
-  const nodeRadius = 28
+  const nodeRadius = 18
   const [hovered, setHovered] = useState(false)
 
   return (
@@ -92,7 +92,7 @@ function AgentNode({ agent, x, y, onClick }: AgentNodeProps): JSX.Element {
       <circle
         cx={x}
         cy={y}
-        r={nodeRadius + 6}
+        r={nodeRadius + 4}
         fill="none"
         strokeWidth={2}
         className={cn(glow.ring, glow.pulse)}
@@ -104,7 +104,7 @@ function AgentNode({ agent, x, y, onClick }: AgentNodeProps): JSX.Element {
         <circle
           cx={x}
           cy={y}
-          r={nodeRadius + 12}
+          r={nodeRadius + 8}
           fill="none"
           strokeWidth={1}
           strokeDasharray="4 6"
@@ -142,10 +142,10 @@ function AgentNode({ agent, x, y, onClick }: AgentNodeProps): JSX.Element {
       {/* Initials */}
       <text
         x={x}
-        y={y - 4}
+        y={y - 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        className="fill-gray-200 text-[11px] font-mono font-bold"
+        className="fill-gray-200 text-[9px] font-mono font-bold"
         style={{ userSelect: 'none' }}
       >
         {getInitials(agent.name)}
@@ -154,19 +154,19 @@ function AgentNode({ agent, x, y, onClick }: AgentNodeProps): JSX.Element {
       {/* Agent name */}
       <text
         x={x}
-        y={y + 12}
+        y={y + 8}
         textAnchor="middle"
         dominantBaseline="middle"
-        className="fill-gray-400 text-[8px] font-mono"
+        className="fill-gray-400 text-[7px] font-mono"
         style={{ userSelect: 'none' }}
       >
-        {agent.name.length > 10 ? agent.name.slice(0, 9) + '..' : agent.name}
+        {agent.name.length > 8 ? agent.name.slice(0, 7) + '..' : agent.name}
       </text>
 
       {/* Status label below */}
       <text
         x={x}
-        y={y + nodeRadius + 14}
+        y={y + nodeRadius + 10}
         textAnchor="middle"
         dominantBaseline="middle"
         className={cn('text-[7px] font-mono uppercase tracking-wider', glow.label)}
@@ -179,14 +179,14 @@ function AgentNode({ agent, x, y, onClick }: AgentNodeProps): JSX.Element {
       {agent.currentTask && (
         <text
           x={x}
-          y={y + nodeRadius + 24}
+          y={y + nodeRadius + 18}
           textAnchor="middle"
           dominantBaseline="middle"
-          className="fill-gray-500 text-[6px] font-mono"
+          className="fill-gray-500 text-[5px] font-mono"
           style={{ userSelect: 'none' }}
         >
-          {agent.currentTask.length > 20
-            ? agent.currentTask.slice(0, 19) + '...'
+          {agent.currentTask.length > 16
+            ? agent.currentTask.slice(0, 15) + '...'
             : agent.currentTask}
         </text>
       )}
@@ -194,9 +194,9 @@ function AgentNode({ agent, x, y, onClick }: AgentNodeProps): JSX.Element {
       {/* Hover popover — rich detail card */}
       {hovered && (
         <foreignObject
-          x={x + nodeRadius + 8}
-          y={y - 50}
-          width={180}
+          x={x + nodeRadius + 6}
+          y={y - 40}
+          width={160}
           height={110}
           style={{ overflow: 'visible' }}
         >
@@ -314,7 +314,7 @@ function CentralHub({
   stats: { total: number; active: number; thinking: number; toolRunning: number; error: number }
 }): JSX.Element {
   const { t } = useTranslation()
-  const hubRadius = 40
+  const hubRadius = 28
   const healthPercent = stats.total > 0 ? Math.round(((stats.total - stats.error) / stats.total) * 100) : 0
 
   return (
@@ -358,7 +358,7 @@ function CentralHub({
         x={centerX}
         y={centerY - 12}
         textAnchor="middle"
-        className="fill-indigo-300 text-[7px] font-mono uppercase tracking-[0.2em]"
+        className="fill-indigo-300 text-[6px] font-mono uppercase tracking-[0.2em]"
         style={{ userSelect: 'none' }}
       >
         {t('activityMap.system', 'SYSTEM')}
@@ -370,7 +370,7 @@ function CentralHub({
         y={centerY + 4}
         textAnchor="middle"
         className={cn(
-          'text-[16px] font-mono font-bold',
+          'text-[13px] font-mono font-bold',
           stats.error > 0 ? 'fill-red-400' : 'fill-emerald-400'
         )}
         style={{ userSelect: 'none' }}
@@ -383,7 +383,7 @@ function CentralHub({
         x={centerX}
         y={centerY + 16}
         textAnchor="middle"
-        className="fill-gray-500 text-[7px] font-mono"
+        className="fill-gray-500 text-[6px] font-mono"
         style={{ userSelect: 'none' }}
       >
         {stats.active}/{stats.total} {t('activityMap.online', 'ONLINE')}
@@ -472,8 +472,8 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps): JSX.Elem
   const { agents } = useAppStore()
   const activeAgents = agents.filter((a) => a.status !== 'archived')
 
-  const svgWidth = 700
-  const svgHeight = 420
+  const svgWidth = 600
+  const svgHeight = 300
   const centerX = svgWidth / 2
   const centerY = svgHeight / 2
 
@@ -485,7 +485,7 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps): JSX.Elem
 
     const groups = groupByTeam(activeAgents, teams)
     const totalAgents = activeAgents.length
-    const radius = Math.min(svgWidth, svgHeight) / 2 - 70
+    const radius = Math.min(svgWidth, svgHeight) / 2 - 50
 
     let currentIndex = 0
     for (const group of groups) {
@@ -533,7 +533,7 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps): JSX.Elem
       <svg
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         className="w-full"
-        style={{ minHeight: '300px' }}
+        style={{ minHeight: '200px' }}
       >
         {/* Background grid */}
         <defs>
@@ -558,7 +558,7 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps): JSX.Elem
             endAngle={sector.endAngle}
             centerX={centerX}
             centerY={centerY}
-            radius={Math.min(svgWidth, svgHeight) / 2 - 70}
+            radius={Math.min(svgWidth, svgHeight) / 2 - 50}
           />
         ))}
 

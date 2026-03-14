@@ -2,143 +2,115 @@ import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { cn } from '../lib/utils'
 import { getInitials } from '../lib/status'
-import {
-  DndContext,
-  DragOverlay,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragStartEvent,
-  type DragEndEvent
-} from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { useState } from 'react'
-import type { Task, TaskStatus } from '@shared/types'
+import { useMemo } from 'react'
+import type { Agent, AgentStatus } from '@shared/types'
 
-const kanbanColumns: { status: TaskStatus; color: string; labelKey: string }[] = [
-  { status: 'todo', color: 'border-blue-500', labelKey: 'todo' },
-  { status: 'in_progress', color: 'border-orange-500', labelKey: 'in_progress' },
-  { status: 'done', color: 'border-green-500', labelKey: 'done' }
-]
+// Map agent status to kanban column
+type KanbanColumn = 'idle' | 'working' | 'needs_attention'
 
-function SortableTaskCard({ task }: { task: Task }): JSX.Element {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="touch-none"
-    >
-      <TaskKanbanCard task={task} />
-    </div>
-  )
+const statusToColumn: Record<AgentStatus, KanbanColumn> = {
+  creating: 'idle',
+  idle: 'idle',
+  active: 'working',
+  thinking: 'working',
+  tool_running: 'working',
+  awaiting: 'needs_attention',
+  error: 'needs_attention',
+  session_conflict: 'needs_attention',
+  archived: 'idle' // filtered out anyway
 }
 
-function TaskKanbanCard({ task }: { task: Task }): JSX.Element {
-  const { agents } = useAppStore()
-  const assignedAgent = task.agentId ? agents.find(a => a.id === task.agentId) : null
+const columns: { key: KanbanColumn; color: string; labelKey: string }[] = [
+  { key: 'idle', color: 'border-gray-500', labelKey: 'Idle / Ready' },
+  { key: 'working', color: 'border-emerald-500', labelKey: 'Working' },
+  { key: 'needs_attention', color: 'border-orange-500', labelKey: 'Needs Attention' }
+]
+
+const statusDotColor: Partial<Record<AgentStatus, string>> = {
+  active: 'bg-emerald-400',
+  thinking: 'bg-blue-400',
+  tool_running: 'bg-amber-400',
+  awaiting: 'bg-orange-400',
+  error: 'bg-red-500',
+  session_conflict: 'bg-purple-400',
+  idle: 'bg-gray-500',
+  creating: 'bg-gray-400'
+}
+
+function AgentCard({ agent, onClick }: { agent: Agent; onClick: (id: string) => void }): JSX.Element {
+  const { t } = useTranslation()
 
   return (
-    <div
-      className="w-full text-left p-2.5 rounded-lg bg-card border border-border hover:bg-accent/50 transition-colors mb-1.5 cursor-grab active:cursor-grabbing"
+    <button
+      onClick={() => onClick(agent.id)}
+      className="w-full text-left p-2 rounded-lg bg-card border border-border hover:bg-accent/50 transition-colors mb-1.5 cursor-pointer"
     >
       <div className="flex items-center gap-2">
+        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-medium shrink-0">
+          {getInitials(agent.name)}
+        </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium truncate">{task.title}</div>
-          {task.description && (
-            <div className="text-[10px] text-muted-foreground line-clamp-2 mt-1">{task.description}</div>
-          )}
+          <div className="text-[11px] font-medium truncate">{agent.name}</div>
+          <div className="flex items-center gap-1 mt-0.5">
+            <div className={cn('w-1.5 h-1.5 rounded-full', statusDotColor[agent.status] || 'bg-gray-500')} />
+            <span className="text-[9px] text-muted-foreground">
+              {t(`status.${agent.status}`, agent.status)}
+            </span>
+          </div>
         </div>
       </div>
-      {assignedAgent && (
-        <div className="flex items-center gap-1.5 mt-2">
-          <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-medium" title={assignedAgent.name}>
-            {getInitials(assignedAgent.name)}
-          </div>
-          <span className="text-[9px] text-muted-foreground truncate">{assignedAgent.name}</span>
+      {agent.currentTask && (
+        <div className="text-[9px] text-muted-foreground mt-1 truncate pl-8">
+          {agent.currentTask}
         </div>
       )}
-    </div>
+    </button>
   )
 }
 
 export function KanbanBoard(): JSX.Element {
-  const { t } = useTranslation()
-  const { tasks, updateTask } = useAppStore()
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const { agents, setSelectedAgent } = useAppStore()
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  const activeAgents = useMemo(
+    () => agents.filter((a) => a.status !== 'archived'),
+    [agents]
   )
 
-  const handleDragStart = (event: DragStartEvent): void => {
-    setActiveId(event.active.id as string)
-  }
-
-  const handleDragEnd = (event: DragEndEvent): void => {
-    setActiveId(null)
-    const { active, over } = event
-    if (!over) return
-
-    const taskId = active.id as string
-    const targetColumn = over.id as string
-
-    if (kanbanColumns.some((c) => c.status === targetColumn)) {
-      const task = tasks.find((t) => t.id === taskId)
-      if (task && task.status !== targetColumn) {
-        window.api.updateTask(taskId, { status: targetColumn as TaskStatus })
-        updateTask(taskId, { status: targetColumn as TaskStatus })
-      }
+  const grouped = useMemo(() => {
+    const map: Record<KanbanColumn, Agent[]> = { idle: [], working: [], needs_attention: [] }
+    for (const agent of activeAgents) {
+      const col = statusToColumn[agent.status] || 'idle'
+      map[col].push(agent)
     }
-  }
-
-  const draggedTask = activeId ? tasks.find((a) => a.id === activeId) : null
+    return map
+  }, [activeAgents])
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex gap-3 overflow-x-auto pb-2">
-        {kanbanColumns.map(({ status, color, labelKey }) => {
-          const columnTasks = tasks.filter((t) => t.status === status)
-
-          return (
-            <div
-              key={status}
-              id={status}
-              className={cn('flex-shrink-0 w-64 rounded-lg bg-secondary/50 border-t-2 flex flex-col', color)}
-            >
-              <div className="p-2 flex items-center justify-between">
-                <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-background/50">
-                  {t(`task.status.${labelKey}`, labelKey.replace('_', ' ').toUpperCase())}
-                </span>
-                <span className="text-[10px] text-muted-foreground">{columnTasks.length}</span>
-              </div>
-              <div className="p-1.5 min-h-[80px] flex-1">
-                <SortableContext items={columnTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-                  {columnTasks.map((task) => (
-                    <SortableTaskCard key={task.id} task={task} />
-                  ))}
-                </SortableContext>
-              </div>
+    <div className="flex gap-3 overflow-x-auto pb-2">
+      {columns.map(({ key, color, labelKey }) => {
+        const colAgents = grouped[key]
+        return (
+          <div
+            key={key}
+            className={cn('flex-1 min-w-[180px] rounded-lg bg-secondary/50 border-t-2 flex flex-col', color)}
+          >
+            <div className="p-2 flex items-center justify-between">
+              <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-background/50">
+                {labelKey}
+              </span>
+              <span className="text-[10px] text-muted-foreground">{colAgents.length}</span>
             </div>
-          )
-        })}
-      </div>
-
-      <DragOverlay>
-        {draggedTask && <TaskKanbanCard task={draggedTask} />}
-      </DragOverlay>
-    </DndContext>
+            <div className="p-1.5 min-h-[60px] flex-1">
+              {colAgents.map((agent) => (
+                <AgentCard key={agent.id} agent={agent} onClick={setSelectedAgent} />
+              ))}
+              {colAgents.length === 0 && (
+                <div className="text-[10px] text-muted-foreground text-center py-4 opacity-50">—</div>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
-
