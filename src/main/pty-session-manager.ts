@@ -16,6 +16,7 @@ interface PtySession {
   lastStatus: AgentStatus
   lastOutputLine: string
   _retryCount?: number
+  _conflictRetried?: boolean
   _idleTimer?: ReturnType<typeof setTimeout>
 }
 
@@ -76,6 +77,14 @@ export class PtySessionManager {
   async startSession(agent: Agent, cols = 120, rows = 30): Promise<void> {
     validateProjectPath(agent.projectPath)
 
+    // Kill any existing session for this agent to prevent conflict
+    const existing = this.sessions.get(agent.id)
+    if (existing) {
+      console.warn(`[PtySession] Killing existing session for ${agent.id} before starting new one`)
+      try { existing.pty.kill() } catch { /* ignore */ }
+      this.sessions.delete(agent.id)
+    }
+
     const sessionId = agent.claudeSessionId || uuidv4()
 
     // Interactive mode — no stream-json flags
@@ -105,7 +114,8 @@ export class PtySessionManager {
       outputBuffer: '',
       scrollbackBuffer: this.database.getScrollback(agent.id),
       lastStatus: 'active',
-      lastOutputLine: ''
+      lastOutputLine: '',
+      _conflictRetried: false
     }
 
     ptyProcess.onData((data: string) => {
@@ -114,6 +124,22 @@ export class PtySessionManager {
         // Accumulate scrollback (max 50KB)
         session.scrollbackBuffer = (session.scrollbackBuffer + data).slice(-50000)
         this.detectAndUpdateStatus(session, data)
+
+        // Auto-recovery: if session conflict detected and not yet retried
+        if (session.lastStatus === 'session_conflict' && !session._conflictRetried) {
+          session._conflictRetried = true
+          console.warn(`[PtySession] Auto-recovering from session conflict for ${agent.id}`)
+          // Kill this process and restart with a new session ID
+          setTimeout(() => {
+            try { ptyProcess.kill() } catch { /* ignore */ }
+            this.sessions.delete(agent.id)
+            const newAgent = { ...agent, claudeSessionId: uuidv4() }
+            this.database.updateAgent(agent.id, { claudeSessionId: newAgent.claudeSessionId })
+            this.startSession(newAgent, cols, rows).catch((err) => {
+              console.error(`[PtySession] Auto-recovery failed for ${agent.id}:`, err)
+            })
+          }, 500)
+        }
       } catch (err) {
         console.error(`[PtySession] onData error for ${agent.id}:`, err)
       }

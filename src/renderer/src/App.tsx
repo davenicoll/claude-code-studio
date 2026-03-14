@@ -66,38 +66,70 @@ function PaneGrid({ onOpenScanner }: PaneGridProps): JSX.Element {
       return <Dashboard fullHeight onOpenScanner={onOpenScanner} />
     }
     if (!agentId) {
+      // Filter out agents already assigned to other panes (prevent duplicates)
+      const assignedIds = new Set(paneAgentIds.filter((id, idx) => id && idx !== i))
+      const available = agents.filter((a) => a.status !== 'archived' && !assignedIds.has(a.id))
       return (
         <div className="flex flex-col h-full items-center justify-center bg-card text-muted-foreground gap-2">
           <p className="text-xs">{t('pane.label', 'Pane')} {i + 1}</p>
-          <div className="flex flex-wrap gap-1 max-w-[200px] justify-center">
-            {agents
-              .filter((a) => a.status !== 'archived')
-              .map((a) => (
+          <div className="flex flex-wrap gap-1 max-w-[240px] justify-center">
+            {available.length === 0 ? (
+              <p className="text-[10px] text-muted-foreground/50">No available agents</p>
+            ) : (
+              available.map((a) => (
                 <button
                   key={a.id}
                   onClick={() => setPaneAgent(i, a.id)}
-                  className="text-[10px] px-2 py-1 rounded bg-secondary hover:bg-accent transition-colors"
+                  className="text-[10px] px-2 py-1 rounded bg-secondary hover:bg-accent transition-colors flex flex-col items-center"
+                  title={a.workspaceId || undefined}
                 >
-                  {a.name}
+                  <span>{a.name}</span>
+                  {a.workspaceId && (
+                    <span className="text-[8px] text-muted-foreground/60">
+                      {a.workspaceId.split('/').pop()}
+                    </span>
+                  )}
                 </button>
-              ))}
+              ))
+            )}
           </div>
         </div>
       )
     }
-    return usePtyMode ? (
-      <PtyTerminalView
-        key={`${i}-${agentId}`}
-        agentId={agentId}
-        compact={paneLayout === 4}
-      />
-    ) : (
-      <TerminalView
-        key={`${i}-${agentId}`}
-        agentId={agentId}
-        compact={paneLayout === 4}
-        onClose={() => setPaneAgent(i, null)}
-      />
+
+    // Pane close header for PtyTerminalView (TerminalView has its own close)
+    const paneCloseHeader = usePtyMode ? (
+      <div className="flex items-center justify-end px-1 py-0.5 bg-card/50 border-b border-border/30">
+        <button
+          onClick={() => setPaneAgent(i, null)}
+          className="text-[10px] px-1.5 py-0.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+          title="Close pane"
+        >
+          ✕
+        </button>
+      </div>
+    ) : null
+
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        {paneCloseHeader}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {usePtyMode ? (
+            <PtyTerminalView
+              key={`${i}-${agentId}`}
+              agentId={agentId}
+              compact={paneLayout === 4}
+            />
+          ) : (
+            <TerminalView
+              key={`${i}-${agentId}`}
+              agentId={agentId}
+              compact={paneLayout === 4}
+              onClose={() => setPaneAgent(i, null)}
+            />
+          )}
+        </div>
+      </div>
     )
   }
 
