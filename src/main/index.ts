@@ -899,9 +899,10 @@ app.whenReady().then(() => {
   })
 
   database = new Database()
-  // Initialize diagnostics (opt-in via settings)
+  // Initialize diagnostics (opt-out: enabled by default, user can disable in Settings)
   const settings = database.getSettings()
-  diagnostics = new DiagnosticsEngine(!!(settings as unknown as Record<string, unknown>).diagnosticsEnabled)
+  const diagEnabled = (settings as unknown as Record<string, unknown>).diagnosticsEnabled !== false
+  diagnostics = new DiagnosticsEngine(diagEnabled)
   diagnostics.info('system', `App started, version ${app.getVersion()}`)
 
   sessionManager = new SessionManager(database, (agentId, message) => {

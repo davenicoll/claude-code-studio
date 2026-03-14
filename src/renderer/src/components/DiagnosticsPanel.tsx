@@ -119,8 +119,8 @@ export function DiagnosticsPanel(): JSX.Element {
         <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 text-center">
           <ShieldOff size={24} className="mx-auto mb-2 text-muted-foreground" />
           <p className="text-xs text-muted-foreground">
-            Diagnostics logging is disabled. Enable it to collect error logs
-            for troubleshooting session issues and crashes.
+           Diagnostics logging has been disabled. Re-enable to resume
+            collecting error logs for troubleshooting.
           </p>
           <p className="text-[10px] text-muted-foreground/60 mt-1">
             Logs are stored locally and never sent externally. 7-day auto-rotation.
