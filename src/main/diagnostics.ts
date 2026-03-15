@@ -1,30 +1,9 @@
 import { app } from 'electron'
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, unlinkSync, statSync } from 'fs'
 import path from 'path'
+import type { LogLevel, LogCategory, DiagnosticLog, DiagnosticStats } from '@shared/types'
 
-export type LogLevel = 'info' | 'warn' | 'error' | 'fatal'
-export type LogCategory = 'pty' | 'session' | 'ipc' | 'network' | 'ui' | 'system' | 'unknown'
-
-export interface DiagnosticLog {
-  timestamp: string
-  level: LogLevel
-  category: LogCategory
-  message: string
-  details?: string
-  agentId?: string
-  sessionId?: string
-  stack?: string
-}
-
-export interface DiagnosticStats {
-  totalLogs: number
-  errorCount: number
-  warnCount: number
-  fatalCount: number
-  oldestLog: string | null
-  newestLog: string | null
-  logSizeBytes: number
-}
+export type { LogLevel, LogCategory, DiagnosticLog, DiagnosticStats }
 
 const MAX_LOG_AGE_DAYS = 7
 const MAX_LOGS_PER_FILE = 500

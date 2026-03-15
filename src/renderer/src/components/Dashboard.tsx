@@ -40,9 +40,9 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
     loadTeams()
   }, [loadTeams])
 
-  const handleAgentClick = (id: string): void => {
+  const handleAgentClick = useCallback((id: string): void => {
     setSelectedAgent(id)
-  }
+  }, [setSelectedAgent])
 
   const handleCreateTeam = async (): Promise<void> => {
     if (!newTeamName.trim()) return
@@ -62,7 +62,7 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
     { key: 'skillMap', icon: BarChart3, label: t('teamMgmt.skillMap') },
     { key: 'kanban', icon: Columns3, label: t('teamMgmt.kanban') },
     { key: 'activityMap', icon: Radar, label: t('teamMgmt.activityMap') },
-    { key: 'activityStream', icon: Brain, label: 'Activity Stream' }
+    { key: 'activityStream', icon: Brain, label: t('teamMgmt.activityStream', 'Activity Stream') }
   ]
 
   const teamColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4']

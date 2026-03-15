@@ -538,8 +538,8 @@ function setupIPC(): void {
     return ptySessionManager.pollMemoryUsage()
   })
 
-  // Memory monitor timer (every 15s)
-  setInterval(async () => {
+  // Memory monitor timer (every 30s) — cleared on app quit
+  const memoryMonitorTimer = setInterval(async () => {
     if (!mainWindow) return
     try {
       const memInfo = await ptySessionManager.pollMemoryUsage()
@@ -1100,6 +1100,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   ;(app as any).isQuitting = true
+  clearInterval(memoryMonitorTimer)
   sessionManager.stopAll()
   ptySessionManager.stopAll()
   sshSessionManager.stopAll()

@@ -155,10 +155,12 @@ export class SshSessionManager {
     if (session.channel) {
       session.channel.write('\x02d') // Ctrl+B, d — tmux detach
       setTimeout(() => {
+        session.client.removeAllListeners()
         session.client.end()
         this.sessions.delete(agentId)
       }, 500)
     } else {
+      session.client.removeAllListeners()
       session.client.end()
       this.sessions.delete(agentId)
     }
@@ -201,10 +203,8 @@ export class SshSessionManager {
       newStatus = 'active'
     }
 
-    if (newStatus && newStatus !== session.lastStatus) {
-      session.lastStatus = newStatus
-      this.database.updateAgent(session.agentId, { status: newStatus })
-      this.onStatusChange(session.agentId, newStatus)
+    if (newStatus) {
+      this.setStatus(session, newStatus)
 
       if (newStatus === 'tool_running') {
         const toolMatch = recentClean.match(/^ *(Read|Edit|Write|Bash|Glob|Grep|Agent|Skill)\b/)
@@ -215,5 +215,16 @@ export class SshSessionManager {
         this.database.updateAgent(session.agentId, { currentTask: null })
       }
     }
+  }
+
+  /** Unified status update — same pattern as PtySessionManager */
+  private setStatus(session: SshSession, newStatus: AgentStatus): void {
+    if (newStatus === session.lastStatus) return
+    session.lastStatus = newStatus
+    this.database.updateAgent(session.agentId, {
+      status: newStatus,
+      ...(newStatus === 'active' ? { currentTask: null } : {})
+    })
+    this.onStatusChange(session.agentId, newStatus)
   }
 }
