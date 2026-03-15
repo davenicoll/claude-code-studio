@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import {
   Users, AlertCircle, XCircle, CheckCircle2, FileText,
-  GitBranch, Plus, X, HardDrive, Brain, Radar, Calendar, Map
+  GitBranch, Plus, X, HardDrive, Brain, Radar, Calendar, Map as MapIcon
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { DailyReport } from './DailyReport'
@@ -67,7 +67,7 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
     { key: 'activityMap', icon: Radar, label: t('teamMgmt.activityMap') },
     { key: 'chainGraph', icon: GitBranch, label: t('teamMgmt.chainGraph', 'Chain Graph') },
     { key: 'scheduler', icon: Calendar, label: t('teamMgmt.scheduler', 'Scheduler') },
-    { key: 'configMap', icon: Map, label: t('teamMgmt.configMap', 'Config Map') }
+    { key: 'configMap', icon: MapIcon, label: t('teamMgmt.configMap', 'Config Map') }
   ]
 
   const teamColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4']
