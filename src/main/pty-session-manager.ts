@@ -272,10 +272,11 @@ export class PtySessionManager {
     else if (/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(rawData)) {
       this.setStatus(session, 'thinking')
     }
-    // Awaiting user input (bypass permissions prompt or similar)
-    else if (/bypass permissions on/i.test(recentClean) ||
-             /Do you want to/i.test(recentClean) ||
-             /\(y\/n\)/i.test(recentClean)) {
+    // Awaiting user input (explicit permission prompts only)
+    // Note: "bypass permissions on" is a static status line, NOT a prompt — excluded
+    else if (/Do you want to/i.test(recentClean) ||
+             /\(y\/n\)/i.test(recentClean) ||
+             /Allow this action\?/i.test(recentClean)) {
       this.setStatus(session, 'awaiting')
     }
     // Error detection
