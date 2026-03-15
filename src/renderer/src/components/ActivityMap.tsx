@@ -5,7 +5,7 @@ import { PtyTerminalView } from './PtyTerminalView'
 import { TerminalView } from './TerminalView'
 import { Composer } from './Composer'
 import { X, GripHorizontal, Maximize2, Pencil, Check, ChevronDown, ChevronUp, RotateCw, Square, Cpu, Clock, Wrench, Zap } from 'lucide-react'
-import type { Agent, AgentStatus, Team, Workspace, AgentProfileData } from '@shared/types'
+import type { Agent, AgentStatus, Team, Workspace, AgentProfileData, ClaudeTaskSession } from '@shared/types'
 
 interface ActivityMapProps {
   teams: Team[]
@@ -416,10 +416,106 @@ function CyberSectorLabel({ team, startAngle, endAngle, cx, cy, radius, palette 
 }
 
 // ---------------------------------------------------------
+// EXTERNAL CLI SESSION NODE
+// ---------------------------------------------------------
+interface ExternalCliNodeProps {
+  session: ClaudeTaskSession
+  x: number
+  y: number
+  palette: CyberPalette
+}
+
+function ExternalCliNode({ session, x, y, palette }: ExternalCliNodeProps) {
+  const [hovered, setHovered] = useState(false)
+  const fiveMinAgo = Date.now() - 5 * 60 * 1000
+  const isActive = new Date(session.lastModified).getTime() > fiveMinAgo
+  const nodeColor = palette.purple
+  const nodeRadius = 8
+
+  return (
+    <g
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Dashed outline ring */}
+      <circle
+        cx={x} cy={y} r={nodeRadius + 4}
+        fill="none" stroke={nodeColor} strokeWidth={0.8}
+        strokeDasharray="3 3" opacity={0.5}
+      />
+
+      {/* Core circle */}
+      <circle
+        cx={x} cy={y} r={nodeRadius}
+        fill={palette.bg} stroke={nodeColor} strokeWidth={1.2}
+      />
+
+      {/* Inner dot — pulse if active */}
+      <circle
+        cx={x} cy={y} r={3}
+        fill={nodeColor} opacity={0.7}
+        className={isActive ? 'animate-pulse' : ''}
+      />
+
+      {/* Label */}
+      <text
+        x={x} y={y + 20} textAnchor="middle"
+        className="font-mono text-[7px] uppercase tracking-wider"
+        fill={nodeColor} style={{ userSelect: 'none' }}
+      >
+        CLI:{session.sessionId.slice(0, 6)}
+      </text>
+
+      {/* Status badge */}
+      <text
+        x={x} y={y + 30} textAnchor="middle"
+        className="font-mono text-[6px] uppercase tracking-widest"
+        fill={isActive ? palette.green : palette.gray}
+        style={{ userSelect: 'none' }}
+      >
+        {isActive ? 'ACTIVE' : 'STALE'}
+      </text>
+
+      {/* Hover tooltip */}
+      {hovered && (
+        <foreignObject x={x + 16} y={y - 30} width={170} height={70} style={{ overflow: 'visible', zIndex: 100 }}>
+          <div
+            className="border shadow-lg rounded"
+            style={{
+              backgroundColor: palette.panelBg,
+              borderColor: palette.panelBorder,
+              backdropFilter: 'blur(8px)',
+              padding: '6px 8px',
+              fontFamily: 'monospace',
+              fontSize: '9px',
+              color: palette.textMain
+            }}
+          >
+            <div style={{ fontWeight: 'bold', fontSize: '10px', marginBottom: '3px' }}>External CLI Session</div>
+            <div className="flex justify-between mb-0.5">
+              <span style={{ color: palette.textMuted }}>ID</span>
+              <span>{session.sessionId.slice(0, 12)}</span>
+            </div>
+            <div className="flex justify-between mb-0.5">
+              <span style={{ color: palette.textMuted }}>HWM</span>
+              <span>{session.highwatermark}</span>
+            </div>
+            <div className="flex justify-between">
+              <span style={{ color: palette.textMuted }}>STATUS</span>
+              <span style={{ color: isActive ? palette.green : palette.gray }}>{isActive ? 'ACTIVE' : 'STALE'}</span>
+            </div>
+          </div>
+        </foreignObject>
+      )}
+    </g>
+  )
+}
+
+// ---------------------------------------------------------
 // MAIN EXPORT
 // ---------------------------------------------------------
 export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
-  const { agents, usePtyMode, updateAgentInList, agentMemory, activeChainFlows } = useAppStore()
+  const { agents, usePtyMode, updateAgentInList, agentMemory, activeChainFlows, agentTeamsData } = useAppStore()
   const palette = useCyberPalette()
   const statusTheme = useMemo(() => getStatusTheme(palette), [palette])
 
@@ -617,7 +713,53 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
     return { total, active, error }
   }, [activeAgents])
 
-  if (activeAgents.length === 0) {
+  // External CLI sessions (unmatched to any agent)
+  const externalSessions = useMemo(() => {
+    if (!agentTeamsData?.taskSessions.length) return []
+    const knownSessionIds = new Set(
+      agents.filter(a => a.claudeSessionId).map(a => a.claudeSessionId!)
+    )
+    return agentTeamsData.taskSessions.filter(s => !knownSessionIds.has(s.sessionId))
+  }, [agentTeamsData, agents])
+
+  // Positions for external sessions on outer ring
+  const externalPositions = useMemo(() => {
+    if (externalSessions.length === 0) return new Map<string, { x: number; y: number }>()
+    const outerRadius = 320
+    const pos = new Map<string, { x: number; y: number }>()
+    for (let i = 0; i < externalSessions.length; i++) {
+      const angle = (2 * Math.PI * i) / externalSessions.length - Math.PI / 2
+      pos.set(externalSessions[i].sessionId, {
+        x: centerX + outerRadius * Math.cos(angle),
+        y: centerY + outerRadius * Math.sin(angle)
+      })
+    }
+    return pos
+  }, [externalSessions, centerX, centerY])
+
+  // Track highwatermark changes for matched agents (pulse indicator)
+  const prevHwmRef = useRef(new Map<string, number>())
+  const [pulsingAgents, setPulsingAgents] = useState(new Set<string>())
+  useEffect(() => {
+    if (!agentTeamsData?.taskSessions.length) return
+    const newPulsing = new Set<string>()
+    for (const session of agentTeamsData.taskSessions) {
+      const matchedAgent = agents.find(a => a.claudeSessionId === session.sessionId)
+      if (!matchedAgent) continue
+      const prevHwm = prevHwmRef.current.get(session.sessionId)
+      if (prevHwm !== undefined && prevHwm !== session.highwatermark) {
+        newPulsing.add(matchedAgent.id)
+      }
+      prevHwmRef.current.set(session.sessionId, session.highwatermark)
+    }
+    if (newPulsing.size > 0) {
+      setPulsingAgents(newPulsing)
+      const timer = setTimeout(() => setPulsingAgents(new Set()), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [agentTeamsData, agents])
+
+  if (activeAgents.length === 0 && externalSessions.length === 0) {
     return (
       <div className="w-full flex items-center justify-center aspect-video border overflow-hidden font-mono relative rounded-md" style={{ backgroundColor: palette.bg, borderColor: palette.cockpitBorder }}>
          <div className="text-sm tracking-widest opacity-50 flex flex-col items-center" style={{ color: palette.textMuted }}>
@@ -728,7 +870,25 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
             {activeAgents.map((agent) => {
               const pos = positions.get(agent.id)
               if (!pos) return null
-              return <AgentNode key={agent.id} agent={agent} x={pos.x} y={pos.y} onClick={handleAgentNodeClick} palette={palette} statusTheme={statusTheme} workspaceName={resolveWorkspaceName(agent)} memoryMB={agentMemory.get(agent.id) || 0} />
+              return (
+                <g key={agent.id}>
+                  {/* Pulse indicator for hwm changes */}
+                  {pulsingAgents.has(agent.id) && (
+                    <circle cx={pos.x} cy={pos.y} r={12} fill="none" stroke={palette.cyan} strokeWidth={2} opacity={0.8}>
+                      <animate attributeName="r" values="12;28" dur="1s" repeatCount="3" />
+                      <animate attributeName="opacity" values="0.8;0" dur="1s" repeatCount="3" />
+                    </circle>
+                  )}
+                  <AgentNode agent={agent} x={pos.x} y={pos.y} onClick={handleAgentNodeClick} palette={palette} statusTheme={statusTheme} workspaceName={resolveWorkspaceName(agent)} memoryMB={agentMemory.get(agent.id) || 0} />
+                </g>
+              )
+            })}
+
+            {/* External CLI Sessions (outer ring) */}
+            {externalSessions.map((session) => {
+              const pos = externalPositions.get(session.sessionId)
+              if (!pos) return null
+              return <ExternalCliNode key={`cli-${session.sessionId}`} session={session} x={pos.x} y={pos.y} palette={palette} />
             })}
           </g>
           

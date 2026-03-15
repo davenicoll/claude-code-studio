@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Activity, Zap, CheckCircle, AlertCircle, Clock, TerminalSquare, Filter } from 'lucide-react'
+import { Activity, Zap, CheckCircle, AlertCircle, Clock, TerminalSquare, Filter, Terminal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/useAppStore'
 
@@ -8,7 +8,7 @@ interface ActivityEvent {
   agentId: string
   agentName: string
   workspaceId?: string
-  type: 'tool_use' | 'thinking' | 'complete' | 'error' | 'output'
+  type: 'tool_use' | 'thinking' | 'complete' | 'error' | 'output' | 'cli_task'
   content: string
   timestamp: Date
 }
@@ -21,7 +21,8 @@ const TYPE_STYLES: Record<string, { icon: typeof Zap; color: string; glow: strin
   thinking: { icon: Clock, color: 'text-purple-400', glow: 'shadow-purple-500/20' },
   complete: { icon: CheckCircle, color: 'text-green-400', glow: 'shadow-green-500/20' },
   error: { icon: AlertCircle, color: 'text-red-400', glow: 'shadow-red-500/20' },
-  output: { icon: TerminalSquare, color: 'text-blue-400', glow: 'shadow-blue-500/20' }
+  output: { icon: TerminalSquare, color: 'text-blue-400', glow: 'shadow-blue-500/20' },
+  cli_task: { icon: Terminal, color: 'text-violet-400', glow: 'shadow-violet-500/20' }
 }
 
 // Strip ANSI escape sequences from PTY output
@@ -45,6 +46,7 @@ export function ActivityStream({ className, onAgentClick }: { className?: string
   const [filterWorkspace, setFilterWorkspace] = useState<string | 'all'>('all')
   const scrollRef = useRef<HTMLDivElement>(null)
   const agents = useAppStore((s) => s.agents)
+  const agentTeamsData = useAppStore((s) => s.agentTeamsData)
 
   // Get unique workspace IDs
   const workspaces = useMemo(() => {
@@ -121,6 +123,66 @@ export function ActivityStream({ className, onAgentClick }: { className?: string
     return () => { unsubOutput(); unsubStatus() }
   }, [agents])
 
+  // Track Agent Teams data changes → emit CLI task events
+  const prevSessionsRef = useRef(new Map<string, number>())
+  const prevSessionIdsRef = useRef(new Set<string>())
+  useEffect(() => {
+    if (!agentTeamsData?.taskSessions.length) return
+    const currentIds = new Set(agentTeamsData.taskSessions.map(s => s.sessionId))
+    const pushEvent = (evt: ActivityEvent): void => {
+      setEvents((prev) => {
+        const next = [...prev, evt]
+        if (next.length > MAX_EVENTS) next.splice(0, next.length - MAX_EVENTS)
+        return next
+      })
+    }
+
+    // Detect highwatermark changes
+    for (const session of agentTeamsData.taskSessions) {
+      const prevHwm = prevSessionsRef.current.get(session.sessionId)
+      if (prevHwm !== undefined && prevHwm !== session.highwatermark) {
+        pushEvent({
+          id: ++eventIdCounter,
+          agentId: `cli:${session.sessionId}`,
+          agentName: `CLI:${session.sessionId.slice(0, 6)}`,
+          type: 'cli_task',
+          content: `Highwatermark: ${prevHwm} → ${session.highwatermark}`,
+          timestamp: new Date()
+        })
+      }
+      prevSessionsRef.current.set(session.sessionId, session.highwatermark)
+    }
+
+    // Detect new sessions
+    if (prevSessionIdsRef.current.size > 0) {
+      for (const id of currentIds) {
+        if (!prevSessionIdsRef.current.has(id)) {
+          pushEvent({
+            id: ++eventIdCounter,
+            agentId: `cli:${id}`,
+            agentName: `CLI:${id.slice(0, 6)}`,
+            type: 'cli_task',
+            content: 'New CLI session detected',
+            timestamp: new Date()
+          })
+        }
+      }
+      for (const id of prevSessionIdsRef.current) {
+        if (!currentIds.has(id)) {
+          pushEvent({
+            id: ++eventIdCounter,
+            agentId: `cli:${id}`,
+            agentName: `CLI:${id.slice(0, 6)}`,
+            type: 'cli_task',
+            content: 'CLI session ended',
+            timestamp: new Date()
+          })
+        }
+      }
+    }
+    prevSessionIdsRef.current = currentIds
+  }, [agentTeamsData])
+
   // Auto-scroll
   useEffect(() => {
     if (autoScroll && scrollRef.current) {
@@ -165,7 +227,7 @@ export function ActivityStream({ className, onAgentClick }: { className?: string
       <div className="flex items-center gap-1 px-2 py-1 border-b border-border/30 overflow-x-auto">
         <Filter size={10} className="text-muted-foreground shrink-0" />
         {/* Type filter */}
-        {(['all', 'tool_use', 'thinking', 'complete', 'error'] as const).map((type) => (
+        {(['all', 'tool_use', 'thinking', 'complete', 'error', 'cli_task'] as const).map((type) => (
           <button
             key={type}
             onClick={() => setFilterType(type)}

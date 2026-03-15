@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Agent, Message, TeamStats, Task, PromptTemplate } from '@shared/types'
+import type { Agent, Message, TeamStats, Task, PromptTemplate, AgentTeamsData } from '@shared/types'
 
 interface AppState {
   // Agents
@@ -77,6 +77,10 @@ interface AppState {
   // Terminal
   terminalFontSize: number
   setTerminalFontSize: (size: number) => void
+
+  // Agent Teams (Claude Code CLI integration)
+  agentTeamsData: AgentTeamsData | null
+  setAgentTeamsData: (data: AgentTeamsData) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -247,6 +251,10 @@ export const useAppStore = create<AppState>((set) => ({
     localStorage.setItem('terminalFontSize', String(size))
     set({ terminalFontSize: size })
   },
+
+  // Agent Teams
+  agentTeamsData: null,
+  setAgentTeamsData: (data) => set({ agentTeamsData: data }),
 
   // Theme
   theme: (localStorage.getItem('theme') as 'dark' | 'light' | 'system') || 'dark',

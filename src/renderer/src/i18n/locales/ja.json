@@ -237,6 +237,14 @@
     "system": "システム",
     "online": "稼働中"
   },
+  "agentTeams": {
+    "external": "外部CLI",
+    "active": "アクティブ",
+    "stale": "停止中",
+    "hwmChanged": "アクティビティ検出",
+    "newSession": "新規CLIセッション検出",
+    "sessionEnded": "CLIセッション終了"
+  },
   "dailyReport": {
     "title": "日報",
     "button": "日報",

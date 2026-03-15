@@ -197,6 +197,16 @@ const api: ElectronAPI = {
 
   installUpdate: () => ipcRenderer.invoke('update:install'),
 
+  // Agent Teams (Claude Code CLI integration)
+  getAgentTeamsData: () => ipcRenderer.invoke('agentTeams:get'),
+  onAgentTeamsUpdate: (callback: (data: import('@shared/types').AgentTeamsData) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: import('@shared/types').AgentTeamsData): void => {
+      callback(data)
+    }
+    ipcRenderer.on('agentTeams:update', handler)
+    return () => ipcRenderer.removeListener('agentTeams:update', handler)
+  },
+
   // Workspace path events
   onWorkspacePathInvalid: (callback: (workspaceIds: string[]) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, workspaceIds: string[]): void => {

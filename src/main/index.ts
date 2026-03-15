@@ -9,7 +9,7 @@ import { PtySessionManager } from './pty-session-manager'
 import { Database } from './database'
 import { ChainOrchestrator } from './chain-orchestrator'
 import { scanWorkspaces, scanRemoteWorkspaces } from './workspace-scanner'
-import { readAgentProfile, readFileContent, readWorkspaceConfig, readGlobalSkills } from './claude-config-reader'
+import { readAgentProfile, readFileContent, readWorkspaceConfig, readGlobalSkills, readAgentTeamsData } from './claude-config-reader'
 import { ChainScheduler } from './scheduler'
 import { SshSessionManager } from './ssh-session-manager'
 import { initMainI18n, t } from './i18n'
@@ -148,6 +148,7 @@ let database: Database
 let chainOrchestrator: ChainOrchestrator
 let chainScheduler: ChainScheduler
 let diagnostics: DiagnosticsEngine | null = null
+let agentTeamsTimer: ReturnType<typeof setInterval> | null = null
 
 function createWindow(): void {
   const settings = database.getSettings()
@@ -586,6 +587,22 @@ function setupIPC(): void {
       // Ignore polling errors
     }
   }, 30000)
+
+  // Agent Teams polling timer (every 15s) — cleared on app quit
+  let prevAgentTeamsJson = ''
+  agentTeamsTimer = setInterval(() => {
+    if (!mainWindow) return
+    try {
+      const data = readAgentTeamsData()
+      const json = JSON.stringify(data.taskSessions)
+      if (json !== prevAgentTeamsJson) {
+        prevAgentTeamsJson = json
+        mainWindow.webContents.send('agentTeams:update', data)
+      }
+    } catch {
+      // Ignore polling errors
+    }
+  }, 15000)
 
   // Dialog
   ipcMain.handle('dialog:selectFolder', async () => {
@@ -1135,6 +1152,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   ;(app as any).isQuitting = true
   clearInterval(memoryMonitorTimer)
+  if (agentTeamsTimer) clearInterval(agentTeamsTimer)
   chainScheduler?.stop()
   sessionManager.stopAll()
   ptySessionManager.stopAll()
@@ -1261,5 +1279,10 @@ function setupDiagnosticsIPC(): void {
 
   ipcMain.handle('diagnostics:isEnabled', () => {
     return diagnostics?.isEnabled() ?? false
+  })
+
+  // Agent Teams (Claude Code CLI integration)
+  ipcMain.handle('agentTeams:get', () => {
+    return readAgentTeamsData()
   })
 }

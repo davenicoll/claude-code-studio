@@ -434,6 +434,10 @@ export interface ElectronAPI {
 
   // Workspace path events
   onWorkspacePathInvalid: (callback: (workspaceIds: string[]) => void) => () => void
+
+  // Agent Teams (Claude Code CLI integration)
+  getAgentTeamsData: () => Promise<AgentTeamsData>
+  onAgentTeamsUpdate: (callback: (data: AgentTeamsData) => void) => () => void
 }
 
 export type LogLevel = 'info' | 'warn' | 'error' | 'fatal'
@@ -448,6 +452,26 @@ export interface DiagnosticLog {
   agentId?: string
   sessionId?: string
   stack?: string
+}
+
+// Agent Teams (Claude Code CLI integration)
+export interface ClaudeTaskSession {
+  sessionId: string
+  isLocked: boolean
+  highwatermark: number
+  lastModified: string
+}
+
+export interface ClaudeTeamConfig {
+  teamName: string
+  members: string[]
+  metadata: Record<string, unknown>
+}
+
+export interface AgentTeamsData {
+  taskSessions: ClaudeTaskSession[]
+  teamConfigs: ClaudeTeamConfig[]
+  lastScannedAt: string
 }
 
 export interface DiagnosticStats {

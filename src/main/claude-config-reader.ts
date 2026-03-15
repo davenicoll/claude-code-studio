@@ -387,6 +387,110 @@ export function readGlobalSkills(): ClaudeSkillEntry[] {
   return skills
 }
 
+export interface AgentTeamsData {
+  taskSessions: Array<{
+    sessionId: string
+    isLocked: boolean
+    highwatermark: number
+    lastModified: string
+  }>
+  teamConfigs: Array<{
+    teamName: string
+    members: string[]
+    metadata: Record<string, unknown>
+  }>
+  lastScannedAt: string
+}
+
+export function readAgentTeamsData(): AgentTeamsData {
+  const home = homedir()
+  const tasksDir = join(home, '.claude', 'tasks')
+  const teamsDir = join(home, '.claude', 'teams')
+
+  const taskSessions: AgentTeamsData['taskSessions'] = []
+  const teamConfigs: AgentTeamsData['teamConfigs'] = []
+
+  // Scan ~/.claude/tasks/
+  if (existsSync(tasksDir)) {
+    try {
+      const entries = readdirSync(tasksDir)
+      // Get mtime for sorting, limit to 100 most recent
+      const withMtime = entries
+        .map((entry) => {
+          const entryPath = join(tasksDir, entry)
+          try {
+            const stat = statSync(entryPath)
+            if (!stat.isDirectory()) return null
+            return { name: entry, path: entryPath, mtime: stat.mtime }
+          } catch {
+            return null
+          }
+        })
+        .filter((e): e is NonNullable<typeof e> => e !== null)
+        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime())
+        .slice(0, 100)
+
+      for (const entry of withMtime) {
+        const lockPath = join(entry.path, '.lock')
+        const hwmPath = join(entry.path, '.highwatermark')
+
+        let isLocked = false
+        let highwatermark = 0
+        let lastModified = entry.mtime.toISOString()
+
+        if (existsSync(lockPath)) {
+          try {
+            const lockStat = statSync(lockPath)
+            isLocked = lockStat.size > 0
+          } catch { /* */ }
+        }
+
+        if (existsSync(hwmPath)) {
+          try {
+            const hwmContent = readFileSync(hwmPath, 'utf-8').trim()
+            highwatermark = parseInt(hwmContent, 10) || 0
+            const hwmStat = statSync(hwmPath)
+            lastModified = hwmStat.mtime.toISOString()
+          } catch { /* */ }
+        }
+
+        taskSessions.push({
+          sessionId: entry.name,
+          isLocked,
+          highwatermark,
+          lastModified
+        })
+      }
+    } catch { /* */ }
+  }
+
+  // Scan ~/.claude/teams/
+  if (existsSync(teamsDir)) {
+    try {
+      const entries = readdirSync(teamsDir)
+      for (const entry of entries) {
+        const configPath = join(teamsDir, entry, 'config.json')
+        if (existsSync(configPath)) {
+          try {
+            const raw = JSON.parse(readFileSync(configPath, 'utf-8'))
+            teamConfigs.push({
+              teamName: String(raw.name ?? entry),
+              members: Array.isArray(raw.members) ? raw.members.map(String) : [],
+              metadata: typeof raw === 'object' ? raw : {}
+            })
+          } catch { /* */ }
+        }
+      }
+    } catch { /* */ }
+  }
+
+  return {
+    taskSessions,
+    teamConfigs,
+    lastScannedAt: new Date().toISOString()
+  }
+}
+
 export function readFileContent(filePath: string): string {
   try {
     return readFileSync(filePath, 'utf-8')

@@ -300,6 +300,14 @@ export function App(): JSX.Element {
       useAppStore.getState().setAgentMemoryBulk(data)
     })
 
+    // Agent Teams: subscribe to updates and fetch initial data
+    window.api.getAgentTeamsData().then((data) => {
+      useAppStore.getState().setAgentTeamsData(data)
+    }).catch(() => {})
+    const unsubAgentTeams = window.api.onAgentTeamsUpdate((data) => {
+      useAppStore.getState().setAgentTeamsData(data)
+    })
+
     const unsubChain = window.api.onChainEvent((event) => {
       if (event.status === 'fired') {
         useAppStore.getState().addChainFlow({
@@ -331,6 +339,7 @@ export function App(): JSX.Element {
       unsubStatus()
       unsubNotification()
       unsubMemory()
+      unsubAgentTeams()
       unsubChain()
       mql.removeEventListener('change', handleSystemTheme)
       clearInterval(statsInterval)

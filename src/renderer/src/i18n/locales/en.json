@@ -237,6 +237,14 @@
     "system": "SYSTEM",
     "online": "ONLINE"
   },
+  "agentTeams": {
+    "external": "External CLI",
+    "active": "Active",
+    "stale": "Stale",
+    "hwmChanged": "Activity detected",
+    "newSession": "New CLI session detected",
+    "sessionEnded": "CLI session ended"
+  },
   "dailyReport": {
     "title": "Daily Report",
     "button": "Daily Report",
