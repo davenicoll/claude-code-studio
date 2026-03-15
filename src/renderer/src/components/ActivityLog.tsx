@@ -194,6 +194,7 @@ export function ActivityLog(): JSX.Element {
               <button
                 key={event.id}
                 onClick={() => handleEventClick(event.agentId)}
+                aria-label={`${event.agentName}: ${event.summary}`}
                 className="w-full flex items-start gap-2 px-4 py-2 text-left hover:bg-accent/30 transition-colors border-t border-border/50"
               >
                 {/* Timeline dot */}

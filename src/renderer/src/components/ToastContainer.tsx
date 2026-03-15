@@ -101,10 +101,11 @@ export function ToastContainer(): JSX.Element {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] space-y-2 max-w-sm">
+    <div className="fixed bottom-4 right-4 z-[100] space-y-2 max-w-sm" aria-live="polite" aria-atomic="false">
       {toasts.map((toast) => (
         <div
           key={toast.id}
+          role="alert"
           className={cn(
             'bg-card border border-border rounded-lg shadow-xl p-3 flex items-start gap-2 animate-in slide-in-from-bottom-2',
             'transition-all duration-300'
@@ -125,6 +126,7 @@ export function ToastContainer(): JSX.Element {
           <button
             onClick={() => removeToast(toast.id)}
             className="p-0.5 hover:bg-accent rounded"
+            aria-label="Dismiss"
           >
             <X size={12} />
           </button>

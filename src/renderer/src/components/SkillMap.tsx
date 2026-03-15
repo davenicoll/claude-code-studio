@@ -68,6 +68,7 @@ export function SkillMap({ onAgentClick }: SkillMapProps): JSX.Element {
               <button
                 key={agent.id}
                 onClick={() => onAgentClick(agent.id)}
+                aria-label={`${agent.name} - ${agent.status}`}
                 className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-card border border-border hover:bg-accent/50 transition-colors"
               >
                 <div className="relative">
@@ -91,6 +92,7 @@ export function SkillMap({ onAgentClick }: SkillMapProps): JSX.Element {
               <button
                 key={agent.id}
                 onClick={() => onAgentClick(agent.id)}
+                aria-label={`${agent.name} - no skills assigned`}
                 className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-card border border-border/50 hover:bg-accent/50 transition-colors opacity-60"
               >
                 <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-medium">

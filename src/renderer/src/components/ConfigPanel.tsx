@@ -24,10 +24,12 @@ export function ConfigPanel({ projectPath, className }: ConfigPanelProps): JSX.E
   return (
     <div className={cn('flex flex-col h-full', className)}>
       {/* Tab bar */}
-      <div className="flex border-b border-border">
+      <div className="flex border-b border-border" role="tablist">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
+            role="tab"
+            aria-selected={activeTab === id}
             onClick={() => setActiveTab(id)}
             className={cn(
               'flex items-center gap-1.5 px-4 py-2 text-xs transition-colors border-b-2',

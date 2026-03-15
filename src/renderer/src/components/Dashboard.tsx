@@ -136,10 +136,12 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
 
       {/* View Switcher + Team Management */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-1 bg-secondary rounded-lg p-0.5">
+        <div className="flex gap-1 bg-secondary rounded-lg p-0.5" role="tablist">
           {views.map(({ key, icon: Icon, label }) => (
             <button
               key={key}
+              role="tab"
+              aria-selected={dashboardActiveView === key}
               onClick={() => setDashboardActiveView(key)}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md transition-colors',
