@@ -98,6 +98,17 @@ function sendNotification(agentId: string, type: 'awaiting' | 'error' | 'taskCom
   mainWindow?.webContents.send('notification', title, body)
 }
 
+// Debounce notification per agent: suppress repeated same-type notifications within window
+const notificationTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const NOTIFICATION_DEBOUNCE_MS = 10000
+
+function debouncedNotification(agentId: string, type: 'awaiting' | 'error' | 'taskComplete'): void {
+  const key = `${agentId}:${type}`
+  if (notificationTimers.has(key)) return // Already pending or recently sent
+  sendNotification(agentId, type)
+  notificationTimers.set(key, setTimeout(() => notificationTimers.delete(key), NOTIFICATION_DEBOUNCE_MS))
+}
+
 function handleStatusChangeWithNotification(agentId: string, status: string): void {
   mainWindow?.webContents.send('agent:status-change', agentId, status)
   chainOrchestrator?.handleStatusChange(agentId, status as any)
@@ -107,14 +118,14 @@ function handleStatusChangeWithNotification(agentId: string, status: string): vo
   prevAgentStatus.set(agentId, status)
 
   if (status === 'awaiting') {
-    sendNotification(agentId, 'awaiting')
+    debouncedNotification(agentId, 'awaiting')
   } else if (status === 'error') {
     sendNotification(agentId, 'error')
     diagnostics?.error('session', `Agent entered error state`, { agentId })
   } else if (status === 'session_conflict') {
     diagnostics?.warn('session', `Session conflict detected`, { agentId })
   } else if (status === 'active' && (prev === 'thinking' || prev === 'tool_running')) {
-    sendNotification(agentId, 'taskComplete')
+    debouncedNotification(agentId, 'taskComplete')
   }
 }
 
