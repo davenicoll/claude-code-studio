@@ -75,7 +75,7 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
 
   return (
     <div className={cn(
-      "bg-card p-4 space-y-4 overflow-y-auto",
+      "bg-card p-4 space-y-4 overflow-y-auto flex flex-col",
       fullHeight ? "h-full flex-1" : "border-b border-border max-h-[60vh]"
     )}>
       {/* Header */}
@@ -218,12 +218,12 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
       </div>
 
       {/* Active View */}
-      <div className="min-h-[120px]">
+      <div className="flex-1 min-h-[120px]">
         {dashboardActiveView === 'activityMap' && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 h-full">
             {/* Activity Stream — left sidebar */}
             <div className="w-72 shrink-0 border border-border rounded-md overflow-hidden bg-card">
-              <ActivityStream className="h-[500px]" onAgentClick={handleAgentClick} />
+              <ActivityStream className="h-full" onAgentClick={handleAgentClick} />
             </div>
             {/* Activity Map — main area */}
             <div className="flex-1 min-w-0">
@@ -231,11 +231,21 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
             </div>
           </div>
         )}
-        {dashboardActiveView === 'chainGraph' && <ChainGraph onAgentClick={handleAgentClick} />}
-        {dashboardActiveView === 'scheduler' && <ScheduledTasksPanel />}
+        {dashboardActiveView === 'chainGraph' && (
+          <div className="h-full">
+            <ChainGraph onAgentClick={handleAgentClick} />
+          </div>
+        )}
+        {dashboardActiveView === 'scheduler' && (
+          <div className="h-full">
+            <ScheduledTasksPanel />
+          </div>
+        )}
         {dashboardActiveView === 'configMap' && (
           <Suspense fallback={<div className="flex items-center justify-center h-40 text-muted-foreground text-xs">Loading...</div>}>
-            <LazyConfigMap workspaces={workspaces} />
+            <div className="h-full">
+              <LazyConfigMap workspaces={workspaces} />
+            </div>
           </Suspense>
         )}
       </div>
