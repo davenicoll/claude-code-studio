@@ -82,6 +82,7 @@
     "activityMap": "Activity Map",
     "activityStream": "Activity Stream",
     "scheduler": "Scheduler",
+    "chainGraph": "Chain Graph",
     "newTeam": "New Team",
     "teamName": "Team Name",
     "teamColor": "Color",
@@ -180,8 +181,10 @@
     "hours": "hr",
     "daily": "daily"
   },
-  "teamMgmt2": {
-    "scheduler": "Scheduler"
+  "chainGraph": {
+    "title": "Chain Graph",
+    "empty": "No task chains configured. Create chains to see the dependency graph.",
+    "noExecutions": "No executions"
   },
   "contextPane": {
     "details": "Details",

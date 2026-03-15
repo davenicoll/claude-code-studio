@@ -38,7 +38,7 @@ interface AppState {
   showRightPane: boolean
   showBroadcast: boolean
   showDashboard: boolean
-  dashboardActiveView: 'orgChart' | 'skillMap' | 'kanban' | 'activityMap' | 'activityStream' | 'scheduler'
+  dashboardActiveView: 'activityMap' | 'chainGraph' | 'activityStream' | 'scheduler'
   toggleRightPane: () => void
   toggleBroadcast: () => void
   toggleDashboard: () => void
@@ -150,7 +150,7 @@ export const useAppStore = create<AppState>((set) => ({
   showRightPane: false,
   showBroadcast: false,
   showDashboard: true,
-  dashboardActiveView: 'orgChart',
+  dashboardActiveView: 'activityMap',
   toggleRightPane: () => set((s) => ({ showRightPane: !s.showRightPane })),
   toggleBroadcast: () => set((s) => ({ showBroadcast: !s.showBroadcast })),
   setDashboardActiveView: (view) => set({ dashboardActiveView: view }),

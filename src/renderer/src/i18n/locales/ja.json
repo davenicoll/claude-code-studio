@@ -82,6 +82,7 @@
     "activityMap": "アクティビティマップ",
     "activityStream": "アクティビティストリーム",
     "scheduler": "スケジューラ",
+    "chainGraph": "チェーングラフ",
     "newTeam": "新規チーム",
     "teamName": "チーム名",
     "teamColor": "カラー",
@@ -180,8 +181,10 @@
     "hours": "時間",
     "daily": "毎日"
   },
-  "teamMgmt2": {
-    "scheduler": "スケジューラ"
+  "chainGraph": {
+    "title": "チェーングラフ",
+    "empty": "タスクチェーンが未設定です。チェーンを作成すると依存関係グラフが表示されます。",
+    "noExecutions": "実行履歴なし"
   },
   "contextPane": {
     "details": "詳細",

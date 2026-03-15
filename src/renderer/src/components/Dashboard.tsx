@@ -3,20 +3,18 @@ import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import {
   Users, AlertCircle, XCircle, CheckCircle2, FileText,
-  Network, BarChart3, Columns3, Plus, X, HardDrive, Brain, Radar, Calendar
+  GitBranch, Plus, X, HardDrive, Brain, Radar, Calendar
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { ActivityLog } from './ActivityLog'
 import { DailyReport } from './DailyReport'
-import { OrgChart } from './OrgChart'
-import { SkillMap } from './SkillMap'
-import { KanbanBoard } from './KanbanBoard'
 import { ActivityMap } from './ActivityMap'
+import { ChainGraph } from './ChainGraph'
 import { ActivityStream } from './ActivityStream'
 import { ScheduledTasksPanel } from './ScheduledTasksPanel'
 import type { Team } from '@shared/types'
 
-type DashboardView = 'orgChart' | 'skillMap' | 'kanban' | 'activityMap' | 'activityStream' | 'scheduler'
+type DashboardView = 'activityMap' | 'chainGraph' | 'activityStream' | 'scheduler'
 
 interface DashboardProps {
   onOpenScanner?: () => void
@@ -58,11 +56,9 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
     loadTeams()
   }
 
-  const views: { key: DashboardView; icon: typeof Network; label: string }[] = [
-    { key: 'orgChart', icon: Network, label: t('teamMgmt.orgChart') },
-    { key: 'skillMap', icon: BarChart3, label: t('teamMgmt.skillMap') },
-    { key: 'kanban', icon: Columns3, label: t('teamMgmt.kanban') },
+  const views: { key: DashboardView; icon: typeof Radar; label: string }[] = [
     { key: 'activityMap', icon: Radar, label: t('teamMgmt.activityMap') },
+    { key: 'chainGraph', icon: GitBranch, label: t('teamMgmt.chainGraph', 'Chain Graph') },
     { key: 'activityStream', icon: Brain, label: t('teamMgmt.activityStream', 'Activity Stream') },
     { key: 'scheduler', icon: Calendar, label: t('teamMgmt.scheduler', 'Scheduler') }
   ]
@@ -215,10 +211,8 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
 
       {/* Active View */}
       <div className="min-h-[120px]">
-        {dashboardActiveView === 'orgChart' && <OrgChart teams={teams} onAgentClick={handleAgentClick} />}
-        {dashboardActiveView === 'skillMap' && <SkillMap onAgentClick={handleAgentClick} />}
-        {dashboardActiveView === 'kanban' && <KanbanBoard />}
         {dashboardActiveView === 'activityMap' && <ActivityMap teams={teams} onAgentClick={handleAgentClick} />}
+        {dashboardActiveView === 'chainGraph' && <ChainGraph onAgentClick={handleAgentClick} />}
         {dashboardActiveView === 'activityStream' && <ActivityStream className="h-[300px] relative" />}
         {dashboardActiveView === 'scheduler' && <ScheduledTasksPanel />}
       </div>
