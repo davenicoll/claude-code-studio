@@ -244,28 +244,56 @@ export class PtySessionManager {
     if (pids.length === 0) return results
 
     if (process.platform === 'win32') {
-      // Windows: use tasklist to get memory for all PIDs at once
+      // Windows: PTY spawns cmd.exe, which spawns claude.cmd -> node.exe
+      // We need to sum memory of all descendant processes under each parent PID
       try {
         const pidList = pids.map(p => p.pid)
+        const pidConditions = pidList.map(pid => `$_.ParentProcessId -eq ${pid}`).join(' -or ')
+        const psCommand = [
+          `$procs = Get-CimInstance Win32_Process;`,
+          `$children = $procs | Where-Object { ${pidConditions} };`,
+          // Also get grandchildren (cmd.exe -> claude.cmd -> node.exe)
+          `$grandPids = $children | ForEach-Object { $_.ProcessId };`,
+          `$grandChildren = $procs | Where-Object { $grandPids -contains $_.ParentProcessId };`,
+          `$all = @($children) + @($grandChildren) | Where-Object { $_ -ne $null };`,
+          `$all | ForEach-Object { Write-Output "$($_.ParentProcessId)|$($_.ProcessId)|$($_.WorkingSetSize)" }`
+        ].join(' ')
+
         const output = await new Promise<string>((resolve, reject) => {
-          // Get memory for process trees (parent cmd.exe + child claude processes)
-          const filters = pidList.map(pid => `/FI "PID eq ${pid}"`).join(' ')
-          execFile('cmd.exe', ['/c', `tasklist /FO CSV /NH ${filters}`], { timeout: 5000 }, (err, stdout) => {
+          execFile('powershell.exe', ['-NoProfile', '-Command', psCommand], { timeout: 8000 }, (err, stdout) => {
             if (err) reject(err)
             else resolve(stdout)
           })
         })
-        const memByPid = new Map<number, number>()
-        for (const line of output.split('\n')) {
-          const match = line.match(/"[^"]*","(\d+)","[^"]*","[^"]*","([\d,]+)\sK"/)
-          if (match) {
-            const pid = parseInt(match[1])
-            const memKB = parseInt(match[2].replace(/,/g, ''))
-            memByPid.set(pid, (memByPid.get(pid) || 0) + Math.round(memKB / 1024))
+
+        // Single pass: map each process to its root PID and sum memory
+        const memByRootPid = new Map<number, number>()
+        const childToRoot = new Map<number, number>()
+        for (const line of output.trim().split('\n')) {
+          const parts = line.trim().split('|')
+          if (parts.length < 3) continue
+          const parentPid = parseInt(parts[0])
+          const childPid = parseInt(parts[1])
+          const workingSet = parseInt(parts[2])
+          if (isNaN(parentPid) || isNaN(childPid) || isNaN(workingSet)) continue
+
+          // Determine which root PID this process belongs to
+          let rootPid: number | undefined
+          if (pidList.includes(parentPid)) {
+            rootPid = parentPid
+          } else if (childToRoot.has(parentPid)) {
+            rootPid = childToRoot.get(parentPid)
+          }
+
+          if (rootPid !== undefined) {
+            childToRoot.set(childPid, rootPid)
+            const mb = Math.round(workingSet / (1024 * 1024))
+            memByRootPid.set(rootPid, (memByRootPid.get(rootPid) || 0) + mb)
           }
         }
+
         for (const { agentId, pid } of pids) {
-          const mb = memByPid.get(pid) || 0
+          const mb = memByRootPid.get(pid) || 0
           const session = this.sessions.get(agentId)
           if (session) session.memoryMB = mb
           results.push({ agentId, memoryMB: mb, pid })
