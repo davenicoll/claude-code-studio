@@ -656,17 +656,18 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
                 </button>
               </div>
             </div>
-            {/* Terminal Area */}
+            {/* Terminal Area (PtyTerminalView includes its own Composer) */}
             <div className="flex-1 min-h-0 bg-black relative p-2">
               {usePtyMode ? (
                 <PtyTerminalView agentId={cockpitAgent.id} compact />
               ) : (
-                <TerminalView agentId={cockpitAgent.id} compact />
+                <>
+                  <TerminalView agentId={cockpitAgent.id} compact />
+                  <div className="shrink-0 border-t p-2" style={{ borderColor: palette.cockpitBorder, backgroundColor: palette.bg }}>
+                    <Composer agentId={cockpitAgent.id} />
+                  </div>
+                </>
               )}
-            </div>
-            {/* Composer Area */}
-            <div className="shrink-0 border-t p-2" style={{ borderColor: palette.cockpitBorder, backgroundColor: palette.bg }}>
-              <Composer agentId={cockpitAgent.id} />
             </div>
           </div>
         )}
