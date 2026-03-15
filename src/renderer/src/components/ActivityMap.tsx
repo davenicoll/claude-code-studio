@@ -330,7 +330,7 @@ function DataStreams({ agents, positions, palette, statusTheme }: { agents: Agen
 // ---------------------------------------------------------
 // CENTRAL SYSTEM HUB (MAGI / STARK CORE)
 // ---------------------------------------------------------
-function SystemCore({ cx, cy, stats, palette }: { cx: number; cy: number; stats: { total: number; active: number; error: number }; palette: CyberPalette }) {
+function SystemCore({ cx, cy, stats, palette }: { cx: number; cy: number; stats: { total: number; active: number; error: number; staleCli: number }; palette: CyberPalette }) {
   const isDanger = stats.error > 0
   const coreColor = isDanger ? palette.red : palette.accent
 
@@ -364,6 +364,13 @@ function SystemCore({ cx, cy, stats, palette }: { cx: number; cy: number; stats:
       <text x={cx} y={cy + 28} textAnchor="middle" className="font-mono text-[9px] font-medium" fill={palette.textMuted} style={{ userSelect: 'none' }}>
         NODES: {stats.active}/{stats.total}
       </text>
+
+      {/* Stale CLI session count */}
+      {stats.staleCli > 0 && (
+        <text x={cx} y={cy + 40} textAnchor="middle" className="font-mono text-[7.5px]" fill={palette.gray} style={{ userSelect: 'none' }}>
+          CLI: {stats.staleCli} stale
+        </text>
+      )}
     </g>
   )
 }
@@ -710,32 +717,36 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
     const total = activeAgents.length
     const active = activeAgents.filter((a) => ['active', 'thinking', 'tool_running', 'awaiting'].includes(a.status)).length
     const error = activeAgents.filter((a) => a.status === 'error').length
-    return { total, active, error }
-  }, [activeAgents])
+    return { total, active, error, staleCli: staleSessionCount }
+  }, [activeAgents, staleSessionCount])
 
-  // External CLI sessions (unmatched to any agent)
-  const externalSessions = useMemo(() => {
-    if (!agentTeamsData?.taskSessions.length) return []
+  // External CLI sessions (unmatched to any agent) — split active vs stale
+  const { activeExternalSessions, staleSessionCount } = useMemo(() => {
+    if (!agentTeamsData?.taskSessions.length) return { activeExternalSessions: [] as ClaudeTaskSession[], staleSessionCount: 0 }
     const knownSessionIds = new Set(
       agents.filter(a => a.claudeSessionId).map(a => a.claudeSessionId!)
     )
-    return agentTeamsData.taskSessions.filter(s => !knownSessionIds.has(s.sessionId))
+    const unmatched = agentTeamsData.taskSessions.filter(s => !knownSessionIds.has(s.sessionId))
+    const fiveMinAgo = Date.now() - 5 * 60 * 1000
+    const active = unmatched.filter(s => new Date(s.lastModified).getTime() > fiveMinAgo)
+    const stale = unmatched.length - active.length
+    return { activeExternalSessions: active, staleSessionCount: stale }
   }, [agentTeamsData, agents])
 
-  // Positions for external sessions on outer ring
+  // Positions for active external sessions on outer ring
   const externalPositions = useMemo(() => {
-    if (externalSessions.length === 0) return new Map<string, { x: number; y: number }>()
+    if (activeExternalSessions.length === 0) return new Map<string, { x: number; y: number }>()
     const outerRadius = 320
     const pos = new Map<string, { x: number; y: number }>()
-    for (let i = 0; i < externalSessions.length; i++) {
-      const angle = (2 * Math.PI * i) / externalSessions.length - Math.PI / 2
-      pos.set(externalSessions[i].sessionId, {
+    for (let i = 0; i < activeExternalSessions.length; i++) {
+      const angle = (2 * Math.PI * i) / activeExternalSessions.length - Math.PI / 2
+      pos.set(activeExternalSessions[i].sessionId, {
         x: centerX + outerRadius * Math.cos(angle),
         y: centerY + outerRadius * Math.sin(angle)
       })
     }
     return pos
-  }, [externalSessions, centerX, centerY])
+  }, [activeExternalSessions, centerX, centerY])
 
   // Track highwatermark changes for matched agents (pulse indicator)
   const prevHwmRef = useRef(new Map<string, number>())
@@ -759,7 +770,7 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
     }
   }, [agentTeamsData, agents])
 
-  if (activeAgents.length === 0 && externalSessions.length === 0) {
+  if (activeAgents.length === 0 && activeExternalSessions.length === 0) {
     return (
       <div className="w-full flex items-center justify-center aspect-video border overflow-hidden font-mono relative rounded-md" style={{ backgroundColor: palette.bg, borderColor: palette.cockpitBorder }}>
          <div className="text-sm tracking-widest opacity-50 flex flex-col items-center" style={{ color: palette.textMuted }}>
@@ -884,8 +895,8 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
               )
             })}
 
-            {/* External CLI Sessions (outer ring) */}
-            {externalSessions.map((session) => {
+            {/* External CLI Sessions (only ACTIVE on outer ring) */}
+            {activeExternalSessions.map((session) => {
               const pos = externalPositions.get(session.sessionId)
               if (!pos) return null
               return <ExternalCliNode key={`cli-${session.sessionId}`} session={session} x={pos.x} y={pos.y} palette={palette} />
