@@ -538,10 +538,11 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
     const hasMultipleWorkspaces = wsGroups.length > 1 || (wsGroups.length === 1 && wsGroups[0].agents.length > 1)
 
     if (hasMultipleWorkspaces && wsGroups.some(g => g.agents.length > 1)) {
-      // Workspace-based clustering: each workspace gets an arc segment
+      // Workspace-based clustering: each workspace gets a wider arc segment
+      // Each agent node occupies roughly 90px vertical space (name + status + workspace label)
+      const NODE_SPACING = 90
       const totalAgents = activeAgents.length
       const mainRadius = 200
-      const clusterOffset = 35 // agents within same workspace cluster tighter
 
       let currentIndex = 0
       for (const wsGroup of wsGroups) {
@@ -549,25 +550,29 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
         const startAngle = (2 * Math.PI * currentIndex) / totalAgents - Math.PI / 2
 
         if (agentCount === 1) {
-          // Single agent — place on main radius
           const position = getRadialPosition(currentIndex, totalAgents, centerX, centerY, mainRadius)
           pos.set(wsGroup.agents[0].id, position)
         } else {
-          // Multiple agents — cluster them around a shared anchor point
+          // Spread agents along the tangent direction (perpendicular to the radius)
           const midIndex = currentIndex + (agentCount - 1) / 2
           const anchorAngle = (2 * Math.PI * midIndex) / totalAgents - Math.PI / 2
           const anchorX = centerX + mainRadius * Math.cos(anchorAngle)
           const anchorY = centerY + mainRadius * Math.sin(anchorAngle)
 
+          // Tangent direction (perpendicular to radius)
+          const tangentX = -Math.sin(anchorAngle)
+          const tangentY = Math.cos(anchorAngle)
+
           for (let i = 0; i < agentCount; i++) {
-            const subAngle = (2 * Math.PI * i) / agentCount - Math.PI / 2
-            const x = anchorX + clusterOffset * Math.cos(subAngle)
-            const y = anchorY + clusterOffset * Math.sin(subAngle)
+            // Center the spread: offset from -half to +half
+            const offset = (i - (agentCount - 1) / 2) * NODE_SPACING
+            const x = anchorX + tangentX * offset
+            const y = anchorY + tangentY * offset
             pos.set(wsGroup.agents[i].id, { x, y })
           }
 
-          // Workspace cluster label
-          const labelRadius = mainRadius + 55
+          // Workspace cluster label — placed outward from anchor
+          const labelRadius = mainRadius + 65
           wsLabels.push({
             wsName: wsGroup.wsName,
             x: centerX + labelRadius * Math.cos(anchorAngle),
@@ -576,7 +581,6 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
           })
         }
 
-        // Build team sectors for compatibility
         const endAngle = (2 * Math.PI * (currentIndex + agentCount)) / totalAgents - Math.PI / 2
         const teamForGroup = teams.find(t =>
           wsGroup.agents.some(a => a.teamId === t.id)
