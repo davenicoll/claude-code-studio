@@ -619,12 +619,34 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
 
           {/* Legend */}
           <div
-            className="absolute bottom-2 left-2 px-2 py-1.5 rounded text-[9px] font-mono flex gap-3"
+            className="absolute bottom-2 left-2 px-3 py-2 rounded text-[9px] font-mono flex flex-col gap-1.5"
             style={{ backgroundColor: palette.panelBg, border: `1px solid ${palette.panelBorder}` }}
           >
-            <span style={{ color: palette.cyan }}>&#9644; {t('configMap.levelGlobal')}</span>
-            <span style={{ color: palette.green }}>&#9644; {t('configMap.levelProject')}</span>
-            <span style={{ color: palette.purple }}>&#9644; {t('configMap.levelAgent')}</span>
+            {/* Level colors (bottom stripe on nodes) */}
+            <div className="flex gap-3">
+              <span style={{ color: palette.textMuted, fontSize: '8px' }}>{t('configMap.level')}:</span>
+              <span style={{ color: palette.cyan }}>&#9644; {t('configMap.levelGlobal')}</span>
+              <span style={{ color: palette.green }}>&#9644; {t('configMap.levelProject')}</span>
+              <span style={{ color: palette.purple }}>&#9644; {t('configMap.levelAgent')}</span>
+            </div>
+            {/* Category colors (node border) */}
+            <div className="flex gap-2 flex-wrap">
+              <span style={{ color: palette.textMuted, fontSize: '8px' }}>{t('configMap.category.label')}:</span>
+              <span style={{ color: palette.cyan }}>&#9679; {t('configMap.category.rules')}</span>
+              <span style={{ color: palette.green }}>&#9679; {t('configMap.category.mcpServers')}</span>
+              <span style={{ color: palette.orange }}>&#9679; {t('configMap.category.skills')}/{t('configMap.category.commands')}/{t('configMap.category.templates')}</span>
+              <span style={{ color: palette.red }}>&#9679; {t('configMap.category.hooks')}</span>
+              <span style={{ color: palette.purple }}>&#9679; {t('configMap.category.memory')}/{t('configMap.category.agents')}</span>
+              <span style={{ color: palette.gray }}>&#9679; {t('configMap.category.settings')}</span>
+            </div>
+            {/* Edge types */}
+            <div className="flex gap-3">
+              <span style={{ color: palette.textMuted, fontSize: '8px' }}>{t('configMap.edges')}:</span>
+              <span style={{ color: palette.cyan }}>— {t('configMap.relationship.inherits')}</span>
+              <span style={{ color: palette.red }}>╌ {t('configMap.relationship.overrides')}</span>
+              <span style={{ color: palette.accent }}>┈ {t('configMap.relationship.references')}</span>
+              <span style={{ color: palette.gray }}>╌ {t('configMap.relationship.configures')}</span>
+            </div>
           </div>
 
           {/* Node count */}
