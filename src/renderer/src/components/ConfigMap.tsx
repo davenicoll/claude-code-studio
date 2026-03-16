@@ -294,6 +294,12 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
     setHoveredNode(node)
   }, [])
 
+  // Compute positions with grouping (must be before handleZoomFit)
+  const nodePositions = useMemo(() => {
+    if (!data) return new Map<string, { x: number; y: number }>()
+    return getGroupedNodePositions(data.nodes, cx, cy)
+  }, [data, cx, cy])
+
   // Zoom controls
   const handleZoomIn = useCallback(() => {
     setScale(s => Math.min(4, s + 0.2))
@@ -305,7 +311,6 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
 
   const handleZoomFit = useCallback(() => {
     if (!data || !containerRef.current) return
-    // Calculate bounding box of all nodes
     const allPos = Array.from(nodePositions.values())
     if (allPos.length === 0) return
     const margin = 80
@@ -321,7 +326,6 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
 
     const fitScale = Math.min(containerW / contentW, containerH / contentH, 1.5)
 
-    // Center the content
     const contentCx = (minX + maxX) / 2
     const contentCy = (minY + maxY) / 2
     const targetPanX = (containerW / 2) - contentCx * fitScale
@@ -330,12 +334,6 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
     setScale(fitScale)
     setPan({ x: targetPanX, y: targetPanY })
   }, [data, nodePositions])
-
-  // Compute positions with grouping
-  const nodePositions = useMemo(() => {
-    if (!data) return new Map<string, { x: number; y: number }>()
-    return getGroupedNodePositions(data.nodes, cx, cy)
-  }, [data, cx, cy])
 
   // Conflict lookup
   const conflictedNodeIds = useMemo(() => {
