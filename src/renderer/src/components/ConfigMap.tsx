@@ -188,14 +188,21 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
   const { activeWorkspaceId, agents, selectedAgentId } = useAppStore()
 
   // Build list of all available paths (workspaces + unique agent project paths)
+  // Filter out home directory and root-like paths that aren't real projects
   const availablePaths = useMemo(() => {
     const paths = new Map<string, string>() // path → display name
+    const homeDirs = new Set(['~', '~/', process.env.HOME, process.env.USERPROFILE, 'C:\\Users\\user', 'C:/Users/user'].filter(Boolean))
+    const isHomePath = (p: string): boolean => {
+      const normalized = p.replace(/[\\/]+$/, '')
+      return homeDirs.has(normalized) || normalized === '~' || /^[A-Z]:[\\/]Users[\\/][^\\/]+$/.test(normalized)
+    }
     for (const ws of workspaces) {
+      if (isHomePath(ws.path)) continue
       const name = ws.path.split('/').pop() || ws.path.split('\\').pop() || ws.path
       paths.set(ws.path, name)
     }
     for (const agent of agents) {
-      if (agent.projectPath && !paths.has(agent.projectPath)) {
+      if (agent.projectPath && !paths.has(agent.projectPath) && !isHomePath(agent.projectPath)) {
         const name = agent.projectPath.split('/').pop() || agent.projectPath.split('\\').pop() || agent.projectPath
         paths.set(agent.projectPath, name)
       }
