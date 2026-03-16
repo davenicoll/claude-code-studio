@@ -51,7 +51,7 @@ function PaneGrid({ onOpenScanner }: PaneGridProps): JSX.Element {
       )
     }
     return (
-      <div className="flex-1 min-w-0 overflow-hidden">
+      <div className="flex-1 min-w-0 overflow-hidden h-full">
         {usePtyMode
           ? <PtyTerminalView agentId={selectedAgentId} />
           : <TerminalView agentId={selectedAgentId} />}
