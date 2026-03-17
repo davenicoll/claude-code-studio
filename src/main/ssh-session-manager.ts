@@ -97,12 +97,24 @@ export class SshSessionManager {
         }
         this.sessions.set(agent.id, session)
 
-        // Set tmux to use largest window size, then create or attach to tmux session
+        // Build startup command:
+        // 1. cd to project path if available
+        // 2. Try tmux if available, otherwise plain shell
+        // 3. Auto-start claude CLI
+        const projectPath = agent.projectPath || workspace.path
+        const cdCmd = projectPath ? `cd ${JSON.stringify(projectPath)} 2>/dev/null; ` : ''
+        const claudeCmd = `claude`
+
+        // tmux command with fallback: check if tmux exists first
         const tmuxCmd = [
-          `tmux set-option -g window-size largest 2>/dev/null;`,
-          `tmux has-session -t ${tmuxSessionName} 2>/dev/null`,
-          `&& tmux attach-session -t ${tmuxSessionName}`,
-          `|| tmux new-session -s ${tmuxSessionName} -x ${cols} -y ${rows}`
+          `if command -v tmux >/dev/null 2>&1; then`,
+          `  tmux set-option -g window-size largest 2>/dev/null;`,
+          `  tmux has-session -t ${tmuxSessionName} 2>/dev/null`,
+          `  && tmux attach-session -t ${tmuxSessionName}`,
+          `  || tmux new-session -s ${tmuxSessionName} -x ${cols} -y ${rows};`,
+          `else`,
+          `  ${cdCmd}${claudeCmd};`,
+          `fi`
         ].join(' ')
 
         client.shell({ term: 'xterm-256color', cols, rows }, (err, channel) => {
@@ -126,7 +138,7 @@ export class SshSessionManager {
             this.sessions.delete(agent.id)
           })
 
-          // Send the tmux command
+          // Send startup command
           channel.write(tmuxCmd + '\n')
 
           this.database.updateAgent(agent.id, { status: 'active' })
