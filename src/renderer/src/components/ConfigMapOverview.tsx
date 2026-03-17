@@ -137,14 +137,19 @@ export function ConfigMapOverview({ workspaces, onDrillDown }: ConfigMapOverview
         /^\/home\/[^/]+$/.test(normalized) ||
         /^\/Users\/[^/]+$/.test(normalized)
     }
-    const paths = new Set<string>()
+    const normalize = (p: string): string => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
+    const seen = new Map<string, string>() // normalizedPath → originalPath
     for (const ws of workspaces) {
-      if (!isHomePath(ws.path)) paths.add(ws.path)
+      if (isHomePath(ws.path)) continue
+      const key = normalize(ws.path)
+      if (!seen.has(key)) seen.set(key, ws.path)
     }
     for (const agent of agents) {
-      if (agent.projectPath && !isHomePath(agent.projectPath)) paths.add(agent.projectPath)
+      if (!agent.projectPath || isHomePath(agent.projectPath)) continue
+      const key = normalize(agent.projectPath)
+      if (!seen.has(key)) seen.set(key, agent.projectPath)
     }
-    return Array.from(paths)
+    return Array.from(seen.values())
   }, [workspaces, agents])
 
   // Load summaries

@@ -201,16 +201,23 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
         /^\/home\/[^/]+$/.test(normalized) ||
         /^\/Users\/[^/]+$/.test(normalized)
     }
+    const normalize = (p: string): string => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
+    const seen = new Set<string>() // normalized keys
     for (const ws of workspaces) {
       if (isHomePath(ws.path)) continue
+      const key = normalize(ws.path)
+      if (seen.has(key)) continue
+      seen.add(key)
       const name = ws.path.split('/').pop() || ws.path.split('\\').pop() || ws.path
       paths.set(ws.path, name)
     }
     for (const agent of agents) {
-      if (agent.projectPath && !paths.has(agent.projectPath) && !isHomePath(agent.projectPath)) {
-        const name = agent.projectPath.split('/').pop() || agent.projectPath.split('\\').pop() || agent.projectPath
-        paths.set(agent.projectPath, name)
-      }
+      if (!agent.projectPath || isHomePath(agent.projectPath)) continue
+      const key = normalize(agent.projectPath)
+      if (seen.has(key)) continue
+      seen.add(key)
+      const name = agent.projectPath.split('/').pop() || agent.projectPath.split('\\').pop() || agent.projectPath
+      paths.set(agent.projectPath, name)
     }
     return paths
   }, [workspaces, agents])
