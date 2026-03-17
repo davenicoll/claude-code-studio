@@ -77,9 +77,12 @@ export function AgentList(): JSX.Element {
     window.api.getAppVersion().then(setAppVersion).catch(() => {})
   }, [])
 
-  // Load workspace colors for the "All Agents" view
+  const [workspaces, setWorkspaces] = useState<import('@shared/types').Workspace[]>([])
+
+  // Load workspace data
   useEffect(() => {
     window.api.getWorkspaces().then((wsList) => {
+      setWorkspaces(wsList)
       const colors: Record<string, string> = {}
       for (const ws of wsList) {
         colors[ws.id] = ws.color
@@ -87,6 +90,16 @@ export function AgentList(): JSX.Element {
       setWorkspaceColors(colors)
     })
   }, [activeWorkspaceId])
+
+  // Check if a project group is SSH-connected
+  const isSSHProject = useCallback((projectName: string): boolean => {
+    const groupAgents = agents.filter(a => a.projectName === projectName)
+    for (const agent of groupAgents) {
+      const ws = workspaces.find(w => w.id === agent.workspaceId)
+      if (ws?.connectionType === 'ssh') return true
+    }
+    return false
+  }, [agents, workspaces])
 
   // Agents needing attention: awaiting or error (filtered by workspace)
   const attentionAgents = useMemo(() => {
@@ -147,8 +160,19 @@ export function AgentList(): JSX.Element {
       sorted.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
       groups.push({ projectName, agents: sorted })
     }
-    return groups.sort((a, b) => a.projectName.localeCompare(b.projectName))
-  }, [filteredAgents, sortBy])
+    // Sort: Global Config first, then local projects, then SSH projects
+    return groups.sort((a, b) => {
+      const aIsGlobal = a.projectName.includes('Global') || a.projectName === '~'
+      const bIsGlobal = b.projectName.includes('Global') || b.projectName === '~'
+      if (aIsGlobal && !bIsGlobal) return -1
+      if (!aIsGlobal && bIsGlobal) return 1
+      const aIsSSH = isSSHProject(a.projectName)
+      const bIsSSH = isSSHProject(b.projectName)
+      if (aIsSSH && !bIsSSH) return 1
+      if (!aIsSSH && bIsSSH) return -1
+      return a.projectName.localeCompare(b.projectName)
+    })
+  }, [filteredAgents, sortBy, isSSHProject])
 
   const toggleProject = (name: string): void => {
     setCollapsedProjects((prev) => {
@@ -474,6 +498,9 @@ export function AgentList(): JSX.Element {
                       <ChevronDown size={12} className="text-muted-foreground shrink-0" />
                     )}
                     <FolderOpen size={12} className="text-muted-foreground shrink-0" />
+                    {isSSHProject(group.projectName) && (
+                      <span className="text-[8px] px-1 py-0 rounded bg-cyan-500/15 text-cyan-500 font-mono shrink-0">SSH</span>
+                    )}
                     {renamingProject === group.projectName ? (
                       <input
                         type="text"
@@ -578,6 +605,28 @@ export function AgentList(): JSX.Element {
             className="fixed z-[100] bg-card border border-border rounded-lg shadow-xl py-1 min-w-[160px]"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
+            {/* Agent details header */}
+            <div className="px-3 py-2 border-b border-border/50 space-y-1">
+              <div className="text-[10px] text-muted-foreground">
+                <span className="font-medium">{t('agent.projectPath', 'Path')}:</span>{' '}
+                <span className="font-mono break-all">{ctxAgent.projectPath || '—'}</span>
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                <span className="font-medium">{t('agent.workspace', 'Workspace')}:</span>{' '}
+                {(() => {
+                  const ws = workspaces.find(w => w.id === ctxAgent.workspaceId)
+                  return ws ? (
+                    <span>{ws.name} {ws.connectionType === 'ssh' ? <span className="text-cyan-500 font-mono">[SSH]</span> : <span className="text-green-500 font-mono">[Local]</span>}</span>
+                  ) : <span>—</span>
+                })()}
+              </div>
+              {ctxAgent.roleLabel && (
+                <div className="text-[10px] text-muted-foreground">
+                  <span className="font-medium">{t('agent.role', 'Role')}:</span> {ctxAgent.roleLabel}
+                </div>
+              )}
+            </div>
+
             <button
               onClick={() => handleTogglePin(ctxAgent.id)}
               className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted/50 transition-colors"
