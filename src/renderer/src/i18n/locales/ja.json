@@ -278,7 +278,14 @@
     "zoomFit": "全体表示",
     "zoomReset": "リセット",
     "hookHistory": "Hook実行履歴",
-    "noHookLogs": "まだHook実行の記録はありません"
+    "noHookLogs": "まだHook実行の記録はありません",
+    "overview": "俯瞰",
+    "detailView": "詳細",
+    "orgOverview": "Organization Overview",
+    "workspaces": "ワークスペース",
+    "orgActiveAgents": "稼働中エージェント",
+    "orgGlobalLink": "グローバル設定",
+    "orgSharedMcp": "共有MCP"
   },
   "agentTeams": {
     "external": "外部CLI",

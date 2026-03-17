@@ -555,7 +555,7 @@ export function readSubagentDefinitions(projectPath: string): SubagentDefinition
   return definitions
 }
 
-import type { ConfigNode, ConfigEdge, ConfigConflict, ConfigMapData } from '@shared/types'
+import type { ConfigNode, ConfigEdge, ConfigConflict, ConfigMapData, WorkspaceConfigSummary, ConfigNodeCategory } from '@shared/types'
 
 export function readConfigMapData(projectPath: string): ConfigMapData {
   const home = homedir()
@@ -855,4 +855,45 @@ export function readConfigMapData(projectPath: string): ConfigMapData {
     conflicts,
     scannedAt: new Date().toISOString()
   }
+}
+
+export function readWorkspaceConfigSummary(projectPath: string): WorkspaceConfigSummary {
+  const data = readConfigMapData(projectPath)
+  const nodeCounts = {} as Record<ConfigNodeCategory, number>
+  const categories: ConfigNodeCategory[] = ['rules', 'skills', 'commands', 'templates', 'mcpServers', 'hooks', 'memory', 'agents', 'settings']
+  for (const cat of categories) {
+    nodeCounts[cat] = data.nodes.filter(n => n.category === cat).length
+  }
+  const agentNames = data.nodes
+    .filter(n => n.category === 'agents')
+    .map(n => n.label)
+  const mcpServerNames = data.nodes
+    .filter(n => n.category === 'mcpServers')
+    .flatMap(n => Array.isArray(n.metadata.servers) ? n.metadata.servers as string[] : [n.label])
+  const hasProjectClaude = data.nodes.some(n => n.category === 'rules' && n.level === 'project')
+
+  return {
+    projectPath: data.projectPath,
+    projectName: data.projectName,
+    nodeCounts,
+    totalNodes: data.nodes.length,
+    totalEdges: data.edges.length,
+    conflictCount: data.conflicts.length,
+    agentNames,
+    mcpServerNames,
+    hasProjectClaude,
+    scannedAt: data.scannedAt
+  }
+}
+
+export function readAllWorkspacesSummary(projectPaths: string[]): WorkspaceConfigSummary[] {
+  const results: WorkspaceConfigSummary[] = []
+  for (const p of projectPaths) {
+    try {
+      results.push(readWorkspaceConfigSummary(p))
+    } catch {
+      // Skip inaccessible workspaces
+    }
+  }
+  return results
 }

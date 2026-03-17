@@ -200,6 +200,9 @@ const api: ElectronAPI = {
   // Config Map
   getConfigMapData: (projectPath: string) => ipcRenderer.invoke('config:getConfigMap', projectPath),
 
+  // Organization Overview
+  getOrgOverview: (projectPaths: string[]) => ipcRenderer.invoke('config:getOrgOverview', projectPaths),
+
   // Hook execution logs
   getHookExecutionLogs: (limit?: number, event?: string) => ipcRenderer.invoke('hook:getLogs', limit, event),
 

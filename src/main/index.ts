@@ -9,7 +9,7 @@ import { PtySessionManager } from './pty-session-manager'
 import { Database } from './database'
 import { ChainOrchestrator } from './chain-orchestrator'
 import { scanWorkspaces, scanRemoteWorkspaces } from './workspace-scanner'
-import { readAgentProfile, readFileContent, readWorkspaceConfig, readGlobalSkills, readAgentTeamsData, readConfigMapData } from './claude-config-reader'
+import { readAgentProfile, readFileContent, readWorkspaceConfig, readGlobalSkills, readAgentTeamsData, readConfigMapData, readAllWorkspacesSummary } from './claude-config-reader'
 import { ChainScheduler } from './scheduler'
 import { SshSessionManager } from './ssh-session-manager'
 import { initMainI18n, t } from './i18n'
@@ -1284,6 +1284,11 @@ function setupDiagnosticsIPC(): void {
   // Config Map
   ipcMain.handle('config:getConfigMap', (_event, projectPath: string) => {
     return readConfigMapData(projectPath)
+  })
+
+  // Organization Overview: all workspaces summary
+  ipcMain.handle('config:getOrgOverview', (_event, projectPaths: string[]) => {
+    return readAllWorkspacesSummary(projectPaths)
   })
 
   // Hook execution logs

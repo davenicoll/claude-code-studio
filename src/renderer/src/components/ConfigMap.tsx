@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Minus, Maximize, GripHorizontal } from 'lucide-react'
+import { Plus, Minus, Maximize, GripHorizontal, Globe, FolderOpen } from 'lucide-react'
 import { useAppStore } from '../stores/useAppStore'
 import { ConfigMapNode } from './ConfigMapNode'
 import { ConfigMapDetailPanel } from './ConfigMapDetailPanel'
+import { ConfigMapOverview } from './ConfigMapOverview'
 import type { ConfigMapData, ConfigNode, Workspace } from '@shared/types'
 
 // ---------------------------------------------------------
@@ -184,6 +185,8 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
   const { t } = useTranslation()
   const resolved = useResolvedTheme()
   const palette = resolved === 'dark' ? cyberPaletteDark : cyberPaletteLight
+
+  const [viewMode, setViewMode] = useState<'overview' | 'detail'>('overview')
 
   const { activeWorkspaceId, agents, selectedAgentId } = useAppStore()
 
@@ -391,6 +394,63 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
     return groups
   }, [data])
 
+  // Drill down from overview to detail
+  const handleDrillDown = useCallback((path: string) => {
+    setSelectedPath(path)
+    setViewMode('detail')
+  }, [])
+
+  // Overview mode
+  if (viewMode === 'overview') {
+    return (
+      <div className="group">
+        <div style={{ height: `${mapHeight}px` }} className="relative">
+          {/* Mode toggle */}
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex gap-0.5 bg-secondary rounded-lg p-0.5" style={{ zIndex: 20 }}>
+            <button
+              onClick={() => setViewMode('overview')}
+              className="flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-md bg-card shadow-sm font-medium"
+            >
+              <Globe size={12} />
+              {t('configMap.overview')}
+            </button>
+            <button
+              onClick={() => setViewMode('detail')}
+              className="flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-md text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <FolderOpen size={12} />
+              {t('configMap.detailView')}
+            </button>
+          </div>
+          <ConfigMapOverview workspaces={workspaces} onDrillDown={handleDrillDown} />
+        </div>
+        {/* Resize handle */}
+        <div
+          className="w-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-ns-resize py-1"
+          onPointerDown={(e) => {
+            e.preventDefault()
+            const startY = e.clientY
+            const startHeight = mapHeight
+            const onMove = (me: PointerEvent): void => {
+              const delta = me.clientY - startY
+              setMapHeight(Math.max(300, Math.min(startHeight + delta, 1200)))
+            }
+            const onUp = (): void => {
+              window.removeEventListener('pointermove', onMove)
+              window.removeEventListener('pointerup', onUp)
+            }
+            window.addEventListener('pointermove', onMove)
+            window.addEventListener('pointerup', onUp)
+          }}
+        >
+          <div className="h-1.5 w-16 rounded-full flex items-center justify-center" style={{ backgroundColor: `${palette.gray}80` }}>
+            <GripHorizontal size={10} style={{ color: palette.textMuted }} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // No project path resolved
   if (!resolvedPath) {
     return (
@@ -425,6 +485,26 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
     <div className="flex w-full" style={{ height: `${mapHeight}px` }}>
       {/* Main SVG area */}
       <div className="flex-1 min-w-0 flex flex-col">
+        {/* Mode toggle + Workspace selector */}
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b shrink-0" style={{ borderColor: palette.panelBorder }}>
+          <div className="flex gap-0.5 bg-secondary rounded-lg p-0.5 shrink-0">
+            <button
+              onClick={() => setViewMode('overview')}
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Globe size={11} />
+              {t('configMap.overview')}
+            </button>
+            <button
+              onClick={() => setViewMode('detail')}
+              className="flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md bg-card shadow-sm font-medium"
+            >
+              <FolderOpen size={11} />
+              {t('configMap.detailView')}
+            </button>
+          </div>
+        </div>
+
         {/* Workspace selector */}
         {availablePaths.size > 1 && (
           <div

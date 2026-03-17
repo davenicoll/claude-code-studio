@@ -538,3 +538,17 @@ export interface ConfigMapData {
   conflicts: ConfigConflict[]
   scannedAt: string
 }
+
+// Organization Overview: summary of each workspace's config
+export interface WorkspaceConfigSummary {
+  projectPath: string
+  projectName: string
+  nodeCounts: Record<ConfigNodeCategory, number>
+  totalNodes: number
+  totalEdges: number
+  conflictCount: number
+  agentNames: string[]
+  mcpServerNames: string[]
+  hasProjectClaude: boolean
+  scannedAt: string
+}

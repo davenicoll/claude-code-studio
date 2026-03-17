@@ -278,7 +278,14 @@
     "zoomFit": "Fit to View",
     "zoomReset": "Reset View",
     "hookHistory": "Hook Execution History",
-    "noHookLogs": "No hook executions recorded yet"
+    "noHookLogs": "No hook executions recorded yet",
+    "overview": "Overview",
+    "detailView": "Detail",
+    "orgOverview": "Organization Overview",
+    "workspaces": "workspaces",
+    "orgActiveAgents": "Active Agents",
+    "orgGlobalLink": "Global Config",
+    "orgSharedMcp": "Shared MCP"
   },
   "agentTeams": {
     "external": "External CLI",
