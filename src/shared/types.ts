@@ -467,6 +467,10 @@ export interface ElectronAPI {
 
   // Hook execution logs
   getHookExecutionLogs: (limit?: number, event?: string) => Promise<HookExecutionLog[]>
+
+  // Window fullscreen
+  toggleFullscreen: () => Promise<boolean>
+  isFullscreen: () => Promise<boolean>
 }
 
 export type LogLevel = 'info' | 'warn' | 'error' | 'fatal'

@@ -2,11 +2,10 @@ import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import {
-  Users, AlertCircle, XCircle, CheckCircle2, FileText,
-  GitBranch, Plus, X, HardDrive, Brain, Radar, Map as MapIcon
+  Users, AlertCircle, XCircle, CheckCircle2,
+  GitBranch, HardDrive, Brain, Radar, Map as MapIcon
 } from 'lucide-react'
 import { cn } from '../lib/utils'
-import { DailyReport } from './DailyReport'
 import { ActivityMap } from './ActivityMap'
 import { ChainGraph } from './ChainGraph'
 import { ActivityStream } from './ActivityStream'
@@ -25,12 +24,8 @@ interface DashboardProps {
 export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.Element {
   const { t } = useTranslation()
   const { teamStats, setSelectedAgent, dashboardActiveView, setDashboardActiveView } = useAppStore()
-  const [showDailyReport, setShowDailyReport] = useState(false)
   const [teams, setTeams] = useState<Team[]>([])
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
-  const [showNewTeam, setShowNewTeam] = useState(false)
-  const [newTeamName, setNewTeamName] = useState('')
-  const [newTeamColor, setNewTeamColor] = useState('#6366f1')
 
   const loadTeams = useCallback(async () => {
     const result = await window.api.getTeams()
@@ -51,26 +46,11 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
     setSelectedAgent(id)
   }, [setSelectedAgent])
 
-  const handleCreateTeam = async (): Promise<void> => {
-    if (!newTeamName.trim()) return
-    await window.api.createTeam(newTeamName.trim(), newTeamColor)
-    setNewTeamName('')
-    setShowNewTeam(false)
-    loadTeams()
-  }
-
-  const handleDeleteTeam = async (id: string): Promise<void> => {
-    await window.api.deleteTeam(id)
-    loadTeams()
-  }
-
   const views: { key: DashboardView; icon: typeof Radar; label: string }[] = [
     { key: 'activityMap', icon: Radar, label: t('teamMgmt.activityMap') },
     { key: 'chainGraph', icon: GitBranch, label: t('teamMgmt.chains', 'Chains') },
     { key: 'configMap', icon: MapIcon, label: t('teamMgmt.configMap', 'Config Map') }
   ]
-
-  const teamColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4']
 
   return (
     <div className={cn(
@@ -90,13 +70,6 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
               {t('workspace.button')}
             </button>
           )}
-          <button
-            onClick={() => setShowDailyReport(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-secondary hover:bg-accent transition-colors"
-          >
-            <FileText size={14} />
-            {t('dailyReport.button')}
-          </button>
         </div>
       </div>
 
@@ -161,59 +134,6 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
           ))}
         </div>
 
-        {/* Team chips + new team */}
-        <div className="flex items-center gap-1.5">
-          {teams.map((team) => (
-            <div
-              key={team.id}
-              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] border border-border"
-            >
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }} />
-              <span>{team.name}</span>
-              <button
-                onClick={() => handleDeleteTeam(team.id)}
-                className="ml-0.5 hover:text-destructive"
-              >
-                <X size={10} />
-              </button>
-            </div>
-          ))}
-          {showNewTeam ? (
-            <div className="flex items-center gap-1">
-              <input
-                type="text"
-                value={newTeamName}
-                onChange={(e) => setNewTeamName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateTeam()}
-                placeholder={t('teamMgmt.teamName')}
-                className="w-24 px-2 py-1 text-[10px] bg-secondary rounded border-none outline-none"
-                autoFocus
-              />
-              <div className="flex gap-0.5">
-                {teamColors.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setNewTeamColor(color)}
-                    className={cn('w-3.5 h-3.5 rounded-full border', newTeamColor === color ? 'border-foreground scale-110' : 'border-transparent')}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-              <button onClick={handleCreateTeam} className="text-[10px] text-primary hover:underline">{t('common.ok', 'OK')}</button>
-              <button onClick={() => setShowNewTeam(false)} className="text-[10px] text-muted-foreground">
-                <X size={10} />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowNewTeam(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] border border-dashed border-border hover:bg-accent transition-colors"
-            >
-              <Plus size={10} />
-              {t('teamMgmt.newTeam')}
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Active View */}
@@ -244,9 +164,6 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
         )}
       </div>
 
-      {showDailyReport && (
-        <DailyReport onClose={() => setShowDailyReport(false)} />
-      )}
     </div>
   )
 }

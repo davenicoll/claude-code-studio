@@ -5,7 +5,6 @@ import { SettingsModal } from './SettingsModal'
 import { cn } from '../lib/utils'
 import {
   LayoutDashboard,
-  Radio,
   PanelRight,
   Settings,
   Square,
@@ -15,7 +14,7 @@ import {
 
 export function TitleBar(): JSX.Element {
   const { t } = useTranslation()
-  const { toggleDashboard, toggleRightPane, toggleBroadcast, showDashboard, paneLayout, setPaneLayout, teamStats } = useAppStore()
+  const { toggleDashboard, toggleRightPane, showDashboard, paneLayout, setPaneLayout, teamStats } = useAppStore()
   const [showSettings, setShowSettings] = useState(false)
 
   const layoutOptions: { layout: 1 | 2 | 4; icon: typeof Square; label: string }[] = [
@@ -69,13 +68,6 @@ export function TitleBar(): JSX.Element {
             title={t('dashboard.title')}
           >
             <LayoutDashboard size={16} />
-          </button>
-          <button
-            onClick={toggleBroadcast}
-            className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
-            title={t('broadcast.title')}
-          >
-            <Radio size={16} />
           </button>
           <button
             onClick={toggleRightPane}

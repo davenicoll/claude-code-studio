@@ -1391,4 +1391,15 @@ function setupDiagnosticsIPC(): void {
   ipcMain.handle('agentTeams:get', () => {
     return readAgentTeamsData()
   })
+
+  // Window fullscreen
+  ipcMain.handle('window:toggleFullscreen', () => {
+    if (!mainWindow) return false
+    mainWindow.setFullScreen(!mainWindow.isFullScreen())
+    return mainWindow.isFullScreen()
+  })
+
+  ipcMain.handle('window:isFullscreen', () => {
+    return mainWindow?.isFullScreen() ?? false
+  })
 }

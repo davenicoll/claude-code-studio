@@ -8,7 +8,6 @@ import { TerminalView } from './components/TerminalView'
 import { PtyTerminalView } from './components/PtyTerminalView'
 import { ContextPane } from './components/ContextPane'
 import { Dashboard } from './components/Dashboard'
-import { BroadcastModal } from './components/BroadcastModal'
 import { CreateAgentDialog } from './components/CreateAgentDialog'
 import { ToastContainer, showToast } from './components/ToastContainer'
 import { QuickSearch } from './components/QuickSearch'
@@ -240,8 +239,7 @@ export function App(): JSX.Element {
     addMessage,
     setTeamStats,
     showRightPane,
-    toggleRightPane,
-    toggleBroadcast
+    toggleRightPane
   } = useAppStore()
 
   const { t } = useTranslation()
@@ -364,10 +362,6 @@ export function App(): JSX.Element {
         e.preventDefault()
         setSelectedAgent(null)
       }
-      if (e.ctrlKey && e.shiftKey && e.key === 'B') {
-        e.preventDefault()
-        toggleBroadcast()
-      }
       if (e.ctrlKey && e.shiftKey && e.key === 'P') {
         e.preventDefault()
         toggleRightPane()
@@ -424,7 +418,7 @@ export function App(): JSX.Element {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [agents, selectedAgentId, setSelectedAgent, toggleBroadcast, toggleRightPane, loadAgents])
+  }, [agents, selectedAgentId, setSelectedAgent, toggleRightPane, loadAgents])
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -439,7 +433,6 @@ export function App(): JSX.Element {
         )}
       </div>
 
-      <BroadcastModal />
       <ToastContainer />
       <QuickSearch />
       <ShortcutHelp />

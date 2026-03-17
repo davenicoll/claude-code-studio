@@ -219,6 +219,10 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener('agentTeams:update', handler)
   },
 
+  // Window fullscreen
+  toggleFullscreen: () => ipcRenderer.invoke('window:toggleFullscreen'),
+  isFullscreen: () => ipcRenderer.invoke('window:isFullscreen'),
+
   // Workspace path events
   onWorkspacePathInvalid: (callback: (workspaceIds: string[]) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, workspaceIds: string[]): void => {

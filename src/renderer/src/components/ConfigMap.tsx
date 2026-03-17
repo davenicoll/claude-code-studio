@@ -193,6 +193,12 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
   const [viewMode, setViewMode] = useState<'overview' | 'detail'>('overview')
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  // Sync fullscreen state with Electron window
+  const handleToggleElectronFullscreen = useCallback(async () => {
+    const result = await window.api.toggleFullscreen()
+    setIsFullscreen(result)
+  }, [])
+
   const { activeWorkspaceId, agents, selectedAgentId } = useAppStore()
 
   // Build list of all available paths (workspaces + unique agent project paths)
@@ -311,7 +317,9 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
   useEffect(() => {
     if (!isFullscreen) return
     const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setIsFullscreen(false)
+      if (e.key === 'Escape') {
+        window.api.toggleFullscreen().then((result) => setIsFullscreen(result))
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -367,9 +375,7 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
     setScale(s => Math.max(0.3, s - 0.2))
   }, [])
 
-  const handleToggleFullscreen = useCallback(() => {
-    setIsFullscreen(f => !f)
-  }, [])
+  const handleToggleFullscreen = handleToggleElectronFullscreen
 
   const handleZoomFit = useCallback(() => {
     if (!data || !containerRef.current) return
@@ -491,13 +497,6 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
       </div>
     )
 
-    if (isFullscreen) {
-      return (
-        <div className="fixed inset-0 z-50" style={{ backgroundColor: palette.bg }}>
-          {overviewContent}
-        </div>
-      )
-    }
     return overviewContent
   }
 
@@ -1000,12 +999,5 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
     </div>
   )
 
-  if (isFullscreen) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: palette.bg }}>
-        {detailContent}
-      </div>
-    )
-  }
   return detailContent
 }

@@ -128,8 +128,8 @@ export function ConfigMapOverview({ workspaces, onDrillDown }: ConfigMapOverview
   const cx = svgWidth / 2
   const cy = svgHeight / 2
 
-  // Collect all project paths
-  const projectPaths = useMemo(() => {
+  // Collect all project paths (including SSH workspaces)
+  const { projectPaths, sshPaths } = useMemo(() => {
     const isHomePath = (p: string): boolean => {
       const normalized = p.replace(/[\\/]+$/, '')
       return normalized === '~' || normalized === '~/' ||
@@ -139,34 +139,59 @@ export function ConfigMapOverview({ workspaces, onDrillDown }: ConfigMapOverview
     }
     const normalize = (p: string): string => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
     const seen = new Map<string, string>() // normalizedPath → originalPath
+    const sshSet = new Set<string>()
     for (const ws of workspaces) {
       if (isHomePath(ws.path)) continue
       const key = normalize(ws.path)
       if (!seen.has(key)) seen.set(key, ws.path)
+      if (ws.connectionType === 'ssh') sshSet.add(ws.path)
     }
     for (const agent of agents) {
       if (!agent.projectPath || isHomePath(agent.projectPath)) continue
       const key = normalize(agent.projectPath)
       if (!seen.has(key)) seen.set(key, agent.projectPath)
     }
-    return Array.from(seen.values())
+    return { projectPaths: Array.from(seen.values()), sshPaths: sshSet }
   }, [workspaces, agents])
 
-  // Load summaries
+  // Load summaries — include SSH workspaces as minimal entries even if scan fails
   useEffect(() => {
     if (projectPaths.length === 0) return
     let cancelled = false
     setLoading(true)
-    window.api.getOrgOverview(projectPaths).then((result) => {
-      if (!cancelled) {
-        setSummaries(result)
-        setLoading(false)
+    // Only send local paths to the scanner (SSH paths can't be scanned locally)
+    const localPaths = projectPaths.filter(p => !sshPaths.has(p))
+    const scanPromise = localPaths.length > 0
+      ? window.api.getOrgOverview(localPaths)
+      : Promise.resolve([])
+    scanPromise.then((result) => {
+      if (cancelled) return
+      // Add SSH workspaces as minimal summary entries
+      const scannedPaths = new Set(result.map(s => s.projectPath))
+      for (const sshPath of sshPaths) {
+        if (scannedPaths.has(sshPath)) continue
+        const ws = workspaces.find(w => w.path === sshPath)
+        const name = ws?.name || sshPath.split('/').pop() || sshPath.split('\\').pop() || sshPath
+        result.push({
+          projectPath: sshPath,
+          projectName: `[SSH] ${name}`,
+          nodeCounts: { rules: 0, skills: 0, commands: 0, templates: 0, mcpServers: 0, hooks: 0, memory: 0, agents: 0, settings: 0 },
+          totalNodes: 0,
+          totalEdges: 0,
+          conflictCount: 0,
+          agentNames: agents.filter(a => a.projectPath === sshPath).map(a => a.name),
+          mcpServerNames: [],
+          hasProjectClaude: false,
+          scannedAt: new Date().toISOString()
+        })
       }
+      setSummaries(result)
+      setLoading(false)
     }).catch(() => {
       if (!cancelled) setLoading(false)
     })
     return () => { cancelled = true }
-  }, [projectPaths])
+  }, [projectPaths, sshPaths, workspaces, agents])
 
   // Wheel zoom
   useEffect(() => {

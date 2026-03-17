@@ -228,9 +228,9 @@ function AgentNode({ agent, x, y, onClick, palette, statusTheme, workspaceName, 
         {agent.name.length > 12 ? agent.name.slice(0, 11) + '..' : agent.name}
       </text>
 
-      {/* ワークスペース名 */}
+      {/* プロジェクト名 */}
       <text x={x} y={y + 44} textAnchor="middle" className="font-mono text-[8.5px] uppercase tracking-wider" fill={palette.textMuted} style={{ userSelect: 'none', opacity: 0.85 }}>
-        WKSP: {workspaceName.slice(0, 14)}
+        {agent.projectName.length > 16 ? agent.projectName.slice(0, 15) + '..' : agent.projectName}
       </text>
 
       {/* ステータスバッジ */}
@@ -858,14 +858,20 @@ export function ActivityMap({ teams, onAgentClick }: ActivityMapProps) {
             ))}
 
             {/* Machine labels (outer ring) */}
-            {machineLabels.map((ml, i) => (
-              <g key={`machine-${i}`}>
-                <rect x={ml.x - 44} y={ml.y - 8} width={88} height={16} fill={palette.bg} stroke={ml.isSSH ? palette.orange : palette.accent} strokeWidth={0.6} rx={3} opacity={0.9} />
-                <text x={ml.x} y={ml.y + 3} textAnchor="middle" className="font-mono text-[8px] uppercase tracking-wider font-semibold" fill={ml.isSSH ? palette.orange : palette.textMuted} style={{ userSelect: 'none' }}>
-                  {ml.isSSH ? '🖥 ' : '💻 '}{ml.name.length > 10 ? ml.name.slice(0, 9) + '..' : ml.name}
-                </text>
-              </g>
-            ))}
+            {machineLabels.map((ml, i) => {
+              const label = ml.isSSH
+                ? `SSH: ${ml.name.length > 8 ? ml.name.slice(0, 7) + '..' : ml.name}`
+                : ml.name.length > 10 ? ml.name.slice(0, 9) + '..' : ml.name
+              const labelWidth = Math.max(88, label.length * 7 + 16)
+              return (
+                <g key={`machine-${i}`}>
+                  <rect x={ml.x - labelWidth / 2} y={ml.y - 8} width={labelWidth} height={16} fill={palette.bg} stroke={ml.isSSH ? palette.orange : palette.accent} strokeWidth={ml.isSSH ? 1.5 : 0.6} rx={3} opacity={0.9} />
+                  <text x={ml.x} y={ml.y + 3} textAnchor="middle" className="font-mono text-[8px] uppercase tracking-wider font-semibold" fill={ml.isSSH ? palette.orange : palette.textMuted} style={{ userSelect: 'none' }}>
+                    {label}
+                  </text>
+                </g>
+              )
+            })}
 
             {/* Project labels (inner ring) */}
             {projectLabels.map((pl, i) => (

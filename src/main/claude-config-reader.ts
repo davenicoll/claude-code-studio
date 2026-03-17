@@ -220,6 +220,26 @@ export function readAgentProfile(projectPath: string): AgentProfileData {
     } catch { /* */ }
   }
 
+  // Also check ~/.claude.json for MCP servers
+  const claudeJsonForProfile = join(home, '.claude.json')
+  if (existsSync(claudeJsonForProfile)) {
+    try {
+      const claudeJson = JSON.parse(readFileSync(claudeJsonForProfile, 'utf-8'))
+      const servers = claudeJson.mcpServers ?? {}
+      const existingNames = new Set(mcpServers.map(s => s.name))
+      for (const [name, config] of Object.entries(servers)) {
+        if (existingNames.has(name)) continue
+        const cfg = config as Record<string, unknown>
+        mcpServers.push({
+          name,
+          command: String(cfg.command ?? ''),
+          args: Array.isArray(cfg.args) ? cfg.args.map(String) : [],
+          enabled: cfg.disabled !== true
+        })
+      }
+    } catch { /* */ }
+  }
+
   // --- Hooks ---
   const hooks: ClaudeHook[] = []
   // Hooks can be in settings.json under "hooks" key
@@ -631,10 +651,11 @@ export function readConfigMapData(projectPath: string): ConfigMapData {
     })
   }
 
-  // --- MCP servers (global + project) ---
+  // --- MCP servers (global: settings.json + ~/.claude.json + project) ---
   const globalMcpNames: string[] = []
   const projectMcpNames: string[] = []
 
+  // Check settings.json for MCP servers
   if (existsSync(settingsPath)) {
     try {
       const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'))
@@ -657,6 +678,31 @@ export function readConfigMapData(projectPath: string): ConfigMapData {
         if (settingsNodeId) {
           edges.push({ from: settingsNodeId, to: id, relationship: 'configures' })
         }
+      }
+    } catch { /* */ }
+  }
+
+  // Check ~/.claude.json for MCP servers (Claude Code stores them here)
+  const claudeJsonPath = join(home, '.claude.json')
+  if (existsSync(claudeJsonPath)) {
+    try {
+      const claudeJson = JSON.parse(readFileSync(claudeJsonPath, 'utf-8'))
+      const servers = claudeJson.mcpServers ?? {}
+      const names = Object.keys(servers).filter(n => !globalMcpNames.includes(n))
+      if (names.length > 0) {
+        const id = makeId('mcp')
+        nodes.push({
+          id,
+          label: `Claude MCP (${names.length})`,
+          category: 'mcpServers',
+          level: 'global',
+          filePath: claudeJsonPath,
+          lineCount: countLines(claudeJsonPath),
+          sizeBytes: getFileSize(claudeJsonPath),
+          preview: names.join(', '),
+          metadata: { servers: names }
+        })
+        globalMcpNames.push(...names)
       }
     } catch { /* */ }
   }
