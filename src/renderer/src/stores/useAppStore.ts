@@ -60,6 +60,11 @@ interface AppState {
   usePtyMode: boolean
   setUsePtyMode: (use: boolean) => void
 
+  // Plan mode (per-agent)
+  planModeAgents: Set<string>
+  togglePlanMode: (agentId: string) => void
+  isPlanMode: (agentId: string) => boolean
+
   // Theme
   theme: 'dark' | 'light' | 'system'
   setTheme: (theme: 'dark' | 'light' | 'system') => void
@@ -206,6 +211,16 @@ export const useAppStore = create<AppState>((set) => ({
   setInvalidWorkspaceIds: (ids) => set({ invalidWorkspaceIds: ids }),
 
   // Terminal mode
+  // Plan mode
+  planModeAgents: new Set<string>(),
+  togglePlanMode: (agentId) => set((state) => {
+    const next = new Set(state.planModeAgents)
+    if (next.has(agentId)) next.delete(agentId)
+    else next.add(agentId)
+    return { planModeAgents: next }
+  }),
+  isPlanMode: (agentId) => get().planModeAgents.has(agentId),
+
   usePtyMode: localStorage.getItem('usePtyMode') !== 'false',
   setUsePtyMode: (use) => {
     localStorage.setItem('usePtyMode', String(use))

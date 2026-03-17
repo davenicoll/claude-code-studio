@@ -348,6 +348,8 @@
     "forNewline": "で改行",
     "templates": "テンプレート",
     "dragResize": "ドラッグでリサイズ",
+    "planModeOn": "Plan Mode ON — ファイル変更なし",
+    "planModeOff": "Plan Modeに切替",
     "category": {
       "command": "コマンド",
       "review": "レビュー",

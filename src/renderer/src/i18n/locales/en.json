@@ -348,6 +348,8 @@
     "forNewline": "for newline",
     "templates": "Templates",
     "dragResize": "Drag to resize",
+    "planModeOn": "Plan Mode ON — files won't be modified",
+    "planModeOff": "Switch to Plan Mode",
     "category": {
       "command": "Command",
       "review": "Review",

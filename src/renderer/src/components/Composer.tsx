@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
-import { Send, X, ChevronDown, ChevronUp, GripHorizontal, Plus, Pencil, Trash2, Paperclip, Search } from 'lucide-react'
+import { Send, X, ChevronDown, ChevronUp, GripHorizontal, Plus, Pencil, Trash2, Paperclip, Search, FlaskConical, Hammer } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/useAppStore'
@@ -32,7 +32,8 @@ const historyMap = new Map<string, string[]>()
 
 export function Composer({ agentId, disabled = false, className }: ComposerProps): JSX.Element {
   const { t } = useTranslation()
-  const { templates, addTemplate, updateTemplate: storeUpdateTemplate, removeTemplate } = useAppStore()
+  const { templates, addTemplate, updateTemplate: storeUpdateTemplate, removeTemplate, planModeAgents, togglePlanMode } = useAppStore()
+  const isPlanMode = planModeAgents.has(agentId)
   const [value, setValue] = useState('')
   const [showTemplates, setShowTemplates] = useState(false)
   const [historyIndex, setHistoryIndex] = useState(-1)
@@ -79,10 +80,16 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
     setHistoryIndex(-1)
     savedDraft.current = ''
 
+    // Prepend plan mode instruction if active
+    const planPrefix = useAppStore.getState().planModeAgents.has(agentId)
+      ? '[PLAN MODE] Do NOT modify any files. Only investigate, analyze, and propose a plan.\n\n'
+      : ''
+
     // Prepend attached files as context
-    const fullMessage = attachedFiles.length > 0
+    const withFiles = attachedFiles.length > 0
       ? `Files: ${attachedFiles.join(', ')}\n\n${trimmed}`
       : trimmed
+    const fullMessage = planPrefix + withFiles
 
     // Send text to PTY, then send carriage return separately after a short delay.
     window.api.ptyWrite(agentId, fullMessage)
@@ -353,6 +360,26 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
               <X size={16} />
             </button>
           )}
+          {/* Plan Mode Toggle */}
+          <button
+            onClick={() => togglePlanMode(agentId)}
+            className={cn(
+              'flex h-[38px] items-center gap-1 px-2 rounded-md transition-colors text-[10px] font-mono',
+              isPlanMode
+                ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                : 'border border-border/50 text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/50'
+            )}
+            title={isPlanMode
+              ? t('composer.planModeOn', 'Plan Mode ON — files won\'t be modified')
+              : t('composer.planModeOff', 'Switch to Plan Mode')
+            }
+          >
+            {isPlanMode
+              ? <><FlaskConical size={13} /> Plan</>
+              : <><Hammer size={13} /> Exec</>
+            }
+          </button>
+
           <button
             onClick={handleSend}
             disabled={disabled || !value.trim()}
