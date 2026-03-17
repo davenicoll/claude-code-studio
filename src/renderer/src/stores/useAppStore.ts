@@ -42,7 +42,7 @@ interface AppState {
   toggleRightPane: () => void
   toggleBroadcast: () => void
   toggleDashboard: () => void
-  setDashboardActiveView: (view: 'orgChart' | 'skillMap' | 'kanban' | 'activityMap' | 'activityStream' | 'configMap') => void
+  setDashboardActiveView: (view: 'orgChart' | 'skillMap' | 'kanban' | 'activityMap' | 'activityStream' | 'configMap' | 'chainGraph' | 'scheduler') => void
 
   // Layout
   paneLayout: 1 | 2 | 4

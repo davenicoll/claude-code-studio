@@ -185,7 +185,8 @@
   "chainGraph": {
     "title": "Chain Graph",
     "empty": "No task chains configured. Create chains to see the dependency graph.",
-    "noExecutions": "No executions"
+    "noExecutions": "No executions",
+    "createChain": "Create Chain"
   },
   "contextPane": {
     "details": "Details",

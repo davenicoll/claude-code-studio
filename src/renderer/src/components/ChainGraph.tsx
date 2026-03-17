@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '../stores/useAppStore'
 import { cn } from '../lib/utils'
-import { GitBranch } from 'lucide-react'
+import { GitBranch, Plus } from 'lucide-react'
 import type { TaskChain, ChainExecutionLog } from '@shared/types'
 
 // ---------------------------------------------------------
@@ -426,8 +426,8 @@ export function ChainGraph({ onAgentClick }: ChainGraphProps) {
           aspectRatio: '2 / 1'
         }}
       >
-        <div className="flex flex-col items-center gap-2 px-6 text-center">
-          <GitBranch size={24} style={{ color: palette.accent, opacity: 0.5 }} />
+        <div className="flex flex-col items-center gap-3 px-6 text-center">
+          <GitBranch size={28} style={{ color: palette.accent, opacity: 0.5 }} />
           <span
             className="text-xs tracking-wide opacity-60"
             style={{ color: palette.textMuted }}
@@ -437,6 +437,18 @@ export function ChainGraph({ onAgentClick }: ChainGraphProps) {
               'No task chains configured. Create chains to see the dependency graph.'
             )}
           </span>
+          <button
+            onClick={() => useAppStore.getState().setDashboardActiveView('scheduler')}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-colors"
+            style={{
+              backgroundColor: palette.cyan + '15',
+              color: palette.cyan,
+              border: `1px solid ${palette.cyan}40`
+            }}
+          >
+            <Plus size={14} />
+            {t('chainGraph.createChain', 'Create Chain')}
+          </button>
         </div>
       </div>
     )
