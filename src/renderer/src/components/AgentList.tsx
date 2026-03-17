@@ -47,6 +47,14 @@ interface ProjectGroup {
   agents: Agent[]
 }
 
+interface MachineGroup {
+  machineKey: string
+  machineName: string
+  isSSH: boolean
+  sshHost?: string
+  projects: ProjectGroup[]
+}
+
 export function AgentList(): JSX.Element {
   const { t } = useTranslation()
   const { agents, selectedAgentId, setSelectedAgent, messages, activeWorkspaceId } = useAppStore()
@@ -64,8 +72,6 @@ export function AgentList(): JSX.Element {
       return new Set()
     }
   })
-  const [renamingProject, setRenamingProject] = useState<string | null>(null)
-  const [renameValue, setRenameValue] = useState('')
   const [contextMenu, setContextMenu] = useState<{ agentId: string; x: number; y: number } | null>(null)
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const [workspaceColors, setWorkspaceColors] = useState<Record<string, string>>({})
@@ -91,15 +97,6 @@ export function AgentList(): JSX.Element {
     })
   }, [activeWorkspaceId])
 
-  // Check if a project group is SSH-connected
-  const isSSHProject = useCallback((projectName: string): boolean => {
-    const groupAgents = agents.filter(a => a.projectName === projectName)
-    for (const agent of groupAgents) {
-      const ws = workspaces.find(w => w.id === agent.workspaceId)
-      if (ws?.connectionType === 'ssh') return true
-    }
-    return false
-  }, [agents, workspaces])
 
   // Agents needing attention: awaiting or error (filtered by workspace)
   const attentionAgents = useMemo(() => {
@@ -139,40 +136,60 @@ export function AgentList(): JSX.Element {
     )
   }, [agents, search, activeWorkspaceId])
 
-  // Group by project with sort
-  const projectGroups = useMemo(() => {
-    const map = new Map<string, Agent[]>()
+  // 2-layer grouping: Machine → Project
+  const machineGroups = useMemo(() => {
+    // Determine machine for each agent
+    const getMachine = (agent: Agent): { key: string; name: string; isSSH: boolean; host?: string } => {
+      const ws = workspaces.find(w => w.id === agent.workspaceId)
+      if (ws?.connectionType === 'ssh' && ws.sshConfig) {
+        const host = ws.sshConfig.host || 'Remote'
+        return { key: `ssh:${host}`, name: ws.name || host, isSSH: true, host }
+      }
+      return { key: 'local', name: 'Local', isSSH: false }
+    }
+
+    // Group: Machine → Project → Agents
+    const machineMap = new Map<string, { name: string; isSSH: boolean; host?: string; projectMap: Map<string, Agent[]> }>()
     for (const agent of filteredAgents) {
-      const group = map.get(agent.projectName) ?? []
-      group.push(agent)
-      map.set(agent.projectName, group)
+      const machine = getMachine(agent)
+      if (!machineMap.has(machine.key)) {
+        machineMap.set(machine.key, { name: machine.name, isSSH: machine.isSSH, host: machine.host, projectMap: new Map() })
+      }
+      const m = machineMap.get(machine.key)!
+      const projectAgents = m.projectMap.get(agent.projectName) ?? []
+      projectAgents.push(agent)
+      m.projectMap.set(agent.projectName, projectAgents)
     }
-    const groups: ProjectGroup[] = []
-    for (const [projectName, groupAgents] of map) {
-      // Sort agents within each group
-      const sorted = [...groupAgents].sort((a, b) => {
-        if (sortBy === 'name') return a.name.localeCompare(b.name)
-        if (sortBy === 'status') return a.status.localeCompare(b.status)
-        // 'updated' — newest first
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+
+    // Build sorted structure
+    const result: MachineGroup[] = []
+    for (const [machineKey, m] of machineMap) {
+      const projects: ProjectGroup[] = []
+      for (const [projectName, projectAgents] of m.projectMap) {
+        const sorted = [...projectAgents].sort((a, b) => {
+          if (sortBy === 'name') return a.name.localeCompare(b.name)
+          if (sortBy === 'status') return a.status.localeCompare(b.status)
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        })
+        sorted.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+        projects.push({ projectName, agents: sorted })
+      }
+      projects.sort((a, b) => {
+        const aIsGlobal = a.projectName.includes('Global') || a.projectName === '~'
+        const bIsGlobal = b.projectName.includes('Global') || b.projectName === '~'
+        if (aIsGlobal && !bIsGlobal) return -1
+        if (!aIsGlobal && bIsGlobal) return 1
+        return a.projectName.localeCompare(b.projectName)
       })
-      // Pinned agents always come first
-      sorted.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
-      groups.push({ projectName, agents: sorted })
+      result.push({ machineKey, machineName: m.name, isSSH: m.isSSH, sshHost: m.host, projects })
     }
-    // Sort: Global Config first, then local projects, then SSH projects
-    return groups.sort((a, b) => {
-      const aIsGlobal = a.projectName.includes('Global') || a.projectName === '~'
-      const bIsGlobal = b.projectName.includes('Global') || b.projectName === '~'
-      if (aIsGlobal && !bIsGlobal) return -1
-      if (!aIsGlobal && bIsGlobal) return 1
-      const aIsSSH = isSSHProject(a.projectName)
-      const bIsSSH = isSSHProject(b.projectName)
-      if (aIsSSH && !bIsSSH) return 1
-      if (!aIsSSH && bIsSSH) return -1
-      return a.projectName.localeCompare(b.projectName)
+    // Local first, then SSH
+    return result.sort((a, b) => {
+      if (!a.isSSH && b.isSSH) return -1
+      if (a.isSSH && !b.isSSH) return 1
+      return a.machineName.localeCompare(b.machineName)
     })
-  }, [filteredAgents, sortBy, isSSHProject])
+  }, [filteredAgents, sortBy, workspaces])
 
   const toggleProject = (name: string): void => {
     setCollapsedProjects((prev) => {
@@ -186,22 +203,6 @@ export function AgentList(): JSX.Element {
       return next
     })
   }
-
-  const handleRenameProject = useCallback(async (oldName: string, newName: string) => {
-    if (!newName.trim() || newName === oldName) {
-      setRenamingProject(null)
-      return
-    }
-    // Update projectName for all agents in this group
-    const groupAgents = agents.filter(a => a.projectName === oldName)
-    for (const agent of groupAgents) {
-      await window.api.updateAgent(agent.id, { projectName: newName.trim() })
-    }
-    setRenamingProject(null)
-    // Refresh agents
-    const updated = await window.api.getAgents()
-    useAppStore.getState().setAgents(updated)
-  }, [agents])
 
   // Strip ANSI escape sequences and terminal control codes from PTY output
   const stripAnsi = (str: string): string =>
@@ -470,78 +471,78 @@ export function AgentList(): JSX.Element {
           </span>
         </div>
 
-        {projectGroups.length === 0 ? (
+        {machineGroups.length === 0 ? (
           <div className="p-4 text-center text-xs text-muted-foreground">
             {agents.filter((a) => a.status !== 'archived').length === 0
               ? t('agent.noAgents')
               : t('common.noResults', '"{{query}}" — no results', { query: search })}
           </div>
         ) : (
-          projectGroups.map((group) => {
-            const isCollapsed = collapsedProjects.has(group.projectName)
+          machineGroups.map((machine) => {
+            const machineCollapsed = collapsedProjects.has(machine.machineKey)
+            const totalAgents = machine.projects.reduce((sum, p) => sum + p.agents.length, 0)
             return (
-              <div key={group.projectName} className="mb-0.5">
-                {/* Project header */}
-                <div className="flex items-center gap-1 px-1.5 py-1 group">
+              <div key={machine.machineKey} className="mb-1">
+                {/* Machine header */}
+                <div className="flex items-center gap-1 px-1.5 py-1">
                   <button
-                    onClick={(e) => {
-                      // Skip toggle if already in rename mode
-                      if (renamingProject === group.projectName) return
-                      if (e.detail === 2) {
-                        // Double click — enter rename mode
-                        e.preventDefault()
-                        setRenamingProject(group.projectName)
-                        setRenameValue(group.projectName)
-                      } else {
-                        // Single click — toggle collapse
-                        toggleProject(group.projectName)
-                      }
-                    }}
+                    onClick={() => toggleProject(machine.machineKey)}
                     className="flex items-center gap-1 flex-1 min-w-0 rounded px-1 py-0.5 hover:bg-accent/50 transition-colors"
                   >
-                    {isCollapsed ? (
+                    {machineCollapsed ? (
                       <ChevronRight size={12} className="text-muted-foreground shrink-0" />
                     ) : (
                       <ChevronDown size={12} className="text-muted-foreground shrink-0" />
                     )}
-                    <FolderOpen size={12} className="text-muted-foreground shrink-0" />
-                    {isSSHProject(group.projectName) && (
+                    {machine.isSSH ? (
                       <span className="text-[8px] px-1 py-0 rounded bg-cyan-500/15 text-cyan-500 font-mono shrink-0">SSH</span>
-                    )}
-                    {renamingProject === group.projectName ? (
-                      <input
-                        type="text"
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onBlur={() => handleRenameProject(group.projectName, renameValue)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleRenameProject(group.projectName, renameValue)
-                          if (e.key === 'Escape') setRenamingProject(null)
-                        }}
-                        className="text-[11px] font-semibold bg-background border border-border rounded px-1 py-0 outline-none w-full"
-                        autoFocus
-                        onClick={(e) => e.stopPropagation()}
-                      />
                     ) : (
-                      <span className="text-[11px] font-semibold text-foreground truncate">
-                        {group.projectName}
-                      </span>
+                      <span className="text-[10px] shrink-0">💻</span>
                     )}
-                    <span className="text-[9px] text-muted-foreground shrink-0 ml-auto">
-                      {group.agents.length}
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider truncate">
+                      {machine.machineName}
                     </span>
-                  </button>
-                  <button
-                    onClick={() => handleCreateForProject(group.projectName)}
-                    className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-accent text-muted-foreground transition-all"
-                    title={t('agent.new')}
-                  >
-                    <Plus size={12} />
+                    <span className="text-[9px] text-muted-foreground shrink-0 ml-auto">
+                      {totalAgents}
+                    </span>
                   </button>
                 </div>
 
-                {/* Agent entries */}
-                {!isCollapsed &&
+                {/* Projects within this machine */}
+                {!machineCollapsed && machine.projects.map((group) => {
+                  const isCollapsed = collapsedProjects.has(group.projectName)
+                  return (
+                    <div key={group.projectName} className="mb-0.5">
+                      {/* Project header */}
+                      <div className="flex items-center gap-1 px-1.5 py-0.5 group ml-2">
+                        <button
+                          onClick={() => toggleProject(group.projectName)}
+                          className="flex items-center gap-1 flex-1 min-w-0 rounded px-1 py-0.5 hover:bg-accent/50 transition-colors"
+                        >
+                          {isCollapsed ? (
+                            <ChevronRight size={10} className="text-muted-foreground shrink-0" />
+                          ) : (
+                            <ChevronDown size={10} className="text-muted-foreground shrink-0" />
+                          )}
+                          <FolderOpen size={11} className="text-muted-foreground shrink-0" />
+                          <span className="text-[11px] font-medium text-foreground truncate">
+                            {group.projectName}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground shrink-0 ml-auto">
+                            {group.agents.length}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handleCreateForProject(group.projectName)}
+                          className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-accent text-muted-foreground transition-all"
+                          title={t('agent.new')}
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
+
+                      {/* Agent entries */}
+                      {!isCollapsed &&
                   group.agents.map((agent) => {
                     const { preview, time } = getLastActivity(agent)
                     return (
@@ -596,6 +597,9 @@ export function AgentList(): JSX.Element {
                       </button>
                     )
                   })}
+                    </div>
+                  )
+                })}
               </div>
             )
           })
