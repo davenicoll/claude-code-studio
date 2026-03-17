@@ -37,12 +37,19 @@ export function CreateAgentDialog({ onClose, prefill }: CreateAgentDialogProps):
       const ws = wsList.find((w) => w.id === wsId) ?? null
       setActiveWorkspace(ws)
       // Auto-fill project path from workspace if no prefill was provided
-      if (ws?.path && !prefill) {
-        setProjectPath(ws.path)
-        const parts = ws.path.replace(/\\/g, '/').split('/')
-        const folderName = parts[parts.length - 1] || ''
-        if (!projectName.trim()) {
-          setProjectName(folderName || ws.name)
+      if (ws && !prefill) {
+        if (ws.path) {
+          setProjectPath(ws.path)
+          const parts = ws.path.replace(/\\/g, '/').split('/')
+          const folderName = parts[parts.length - 1] || ''
+          if (!projectName.trim()) {
+            setProjectName(folderName || ws.name)
+          }
+        } else if (ws.connectionType === 'ssh' && ws.sshConfig) {
+          // SSH workspace without path: use host as default project name
+          if (!projectName.trim()) {
+            setProjectName(`${ws.sshConfig.host}`)
+          }
         }
       }
     })
