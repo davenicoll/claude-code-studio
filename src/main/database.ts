@@ -121,6 +121,13 @@ export class Database {
       settings.autoRestartOnMemoryExceeded = false
     }
 
+    // Backfill message metadata
+    if (Array.isArray(raw.messages)) {
+      for (const msg of raw.messages as Record<string, unknown>[]) {
+        if (msg.metadata === undefined) msg.metadata = null
+      }
+    }
+
     // Backfill agent-level fields added after initial release
     for (const agent of raw.agents as Record<string, unknown>[]) {
       if (agent.workspaceId === undefined) agent.workspaceId = null
@@ -163,8 +170,19 @@ export class Database {
   private save(): void {
     // Atomic write: write to temp file then rename
     const tmpPath = this.dbPath + '.tmp'
-    writeFileSync(tmpPath, JSON.stringify(this.data, null, 2), 'utf-8')
-    renameSync(tmpPath, this.dbPath)
+    const data = JSON.stringify(this.data, null, 2)
+    writeFileSync(tmpPath, data, 'utf-8')
+    try {
+      renameSync(tmpPath, this.dbPath)
+    } catch {
+      // Retry once after brief delay (Windows file lock)
+      try {
+        renameSync(tmpPath, this.dbPath)
+      } catch {
+        // Last resort: direct write
+        writeFileSync(this.dbPath, data, 'utf-8')
+      }
+    }
   }
 
   exportData(): string {

@@ -81,7 +81,9 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener('agent:output', handler)
   },
   onAgentStatusChange: (callback) => {
+    const VALID_STATUSES = ['creating', 'active', 'thinking', 'tool_running', 'awaiting', 'error', 'session_conflict', 'idle', 'archived']
     const handler = (_event: Electron.IpcRendererEvent, agentId: string, status: string): void => {
+      if (!VALID_STATUSES.includes(status)) return
       callback(agentId, status as import('@shared/types').AgentStatus)
     }
     ipcRenderer.on('agent:status-change', handler)

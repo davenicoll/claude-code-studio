@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Group, Panel, useDefaultLayout } from 'react-resizable-panels'
 import { useAppStore } from './stores/useAppStore'
@@ -272,10 +272,14 @@ export function App(): JSX.Element {
     window.api.updateSettings({ usePtyMode })
   }, [setAgents, setTeamStats])
 
+  const isMountedRef = useRef(true)
+
   useEffect(() => {
+    isMountedRef.current = true
     loadAgents()
 
     const unsubOutput = window.api.onAgentOutput((agentId, message) => {
+      if (!isMountedRef.current) return
       addMessage(agentId, {
         id: Date.now(),
         agentId,
@@ -288,27 +292,33 @@ export function App(): JSX.Element {
     })
 
     const unsubStatus = window.api.onAgentStatusChange((agentId, status) => {
+      if (!isMountedRef.current) return
       updateAgentInList(agentId, { status })
       window.api.getTeamStats().then(setTeamStats)
     })
 
     const unsubNotification = window.api.onNotification((title, body) => {
+      if (!isMountedRef.current) return
       showToast(title, body, title.includes('Error') ? 'error' : title.includes('Memory') ? 'warning' : 'warning')
     })
 
     const unsubMemory = window.api.onMemoryUpdate((data) => {
+      if (!isMountedRef.current) return
       useAppStore.getState().setAgentMemoryBulk(data)
     })
 
     // Agent Teams: subscribe to updates and fetch initial data
     window.api.getAgentTeamsData().then((data) => {
+      if (!isMountedRef.current) return
       useAppStore.getState().setAgentTeamsData(data)
     }).catch(() => {})
     const unsubAgentTeams = window.api.onAgentTeamsUpdate((data) => {
+      if (!isMountedRef.current) return
       useAppStore.getState().setAgentTeamsData(data)
     })
 
     const unsubChain = window.api.onChainEvent((event) => {
+      if (!isMountedRef.current) return
       if (event.status === 'fired') {
         useAppStore.getState().addChainFlow({
           fromAgentId: event.fromAgentId,
@@ -335,6 +345,7 @@ export function App(): JSX.Element {
     }, 30000)
 
     return () => {
+      isMountedRef.current = false
       unsubOutput()
       unsubStatus()
       unsubNotification()

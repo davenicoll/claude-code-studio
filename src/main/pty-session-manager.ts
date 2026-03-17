@@ -201,6 +201,11 @@ export class PtySessionManager {
   stopSession(agentId: string): void {
     const session = this.sessions.get(agentId)
     if (!session) return
+    // Clear idle timer to prevent leaked timers after session destruction
+    if (session._idleTimer) {
+      clearTimeout(session._idleTimer)
+      session._idleTimer = undefined
+    }
     session.pty.kill()
     this.sessions.delete(agentId)
   }

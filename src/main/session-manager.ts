@@ -13,27 +13,28 @@ import { t } from './i18n'
  * - Must exist and be a directory
  */
 export function validateProjectPath(projectPath: string): void {
-  // Normalize to forward slashes for consistent checking, then use path.resolve
-  const normalized = projectPath.replace(/\\/g, '/')
+  // Resolve to absolute canonical path first (collapses .., ., etc.)
+  const resolved = path.resolve(projectPath)
 
-  // Check for path traversal components
+  // Check for path traversal components after resolution
+  const normalized = resolved.replace(/\\/g, '/')
   const segments = normalized.split('/')
   if (segments.some((seg) => seg === '..')) {
     throw new Error(`Invalid project path: path traversal (..) is not allowed: ${projectPath}`)
   }
 
   // Must be absolute (works for both Windows C:/... and Unix /...)
-  if (!path.isAbsolute(projectPath)) {
+  if (!path.isAbsolute(resolved)) {
     throw new Error(`Invalid project path: must be an absolute path: ${projectPath}`)
   }
 
   // Must exist
-  if (!existsSync(projectPath)) {
+  if (!existsSync(resolved)) {
     throw new Error(`Invalid project path: directory does not exist: ${projectPath}`)
   }
 
   // Must be a directory
-  const stat = statSync(projectPath)
+  const stat = statSync(resolved)
   if (!stat.isDirectory()) {
     throw new Error(`Invalid project path: not a directory: ${projectPath}`)
   }

@@ -351,6 +351,11 @@ export interface ElectronAPI {
 
   // Team stats
   getTeamStats: () => Promise<TeamStats>
+  pollMemory: () => Promise<Array<{ agentId: string; memoryMB: number; pid: number }>>
+  onMemoryUpdate: (callback: (data: Array<{ agentId: string; memoryMB: number; pid: number }>) => void) => () => void
+
+  // Chain events
+  onChainEvent: (callback: (event: { chainId: string; chainName: string; fromAgentId: string; toAgentId: string; status: string; message?: string; timestamp: string }) => void) => () => void
 
   // Dialog
   selectFolder: () => Promise<string | null>
@@ -454,6 +459,12 @@ export interface ElectronAPI {
 
   // Config Map
   getConfigMapData: (projectPath: string) => Promise<ConfigMapData>
+
+  // Organization Overview
+  getOrgOverview: (projectPaths: string[]) => Promise<WorkspaceConfigSummary[]>
+
+  // Hook execution logs
+  getHookExecutionLogs: (limit?: number, event?: string) => Promise<HookExecutionLog[]>
 }
 
 export type LogLevel = 'info' | 'warn' | 'error' | 'fatal'

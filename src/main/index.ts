@@ -334,7 +334,21 @@ function setupIPC(): void {
 
   ipcMain.handle('agent:update', (_event, id: string, updates: Record<string, unknown>) => {
     if (typeof id !== 'string') throw new Error('Invalid agent ID')
-    return database.updateAgent(id, updates)
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      throw new Error('Invalid updates: must be an object')
+    }
+    const ALLOWED_AGENT_KEYS = new Set([
+      'name', 'icon', 'roleLabel', 'workspaceId', 'projectPath', 'projectName',
+      'sessionNumber', 'status', 'currentTask', 'systemPrompt', 'claudeSessionId',
+      'isPinned', 'skills', 'teamId', 'reportTo', 'parentAgentId', 'isTemporary'
+    ])
+    const sanitized: Record<string, unknown> = {}
+    for (const key of Object.keys(updates)) {
+      if (ALLOWED_AGENT_KEYS.has(key)) {
+        sanitized[key] = updates[key]
+      }
+    }
+    return database.updateAgent(id, sanitized)
   })
 
   ipcMain.handle('agent:archive', async (_event, id: string) => {
@@ -454,7 +468,31 @@ function setupIPC(): void {
     ) {
       throw new Error('Invalid chain parameters: name, triggerAgentId, targetAgentId, and messageTemplate are required')
     }
-    const created = database.createChain(chain as unknown as Omit<import('@shared/types').TaskChain, 'id' | 'createdAt'>)
+    const tc = chain.triggerCondition
+    if (!tc || typeof tc !== 'object' || Array.isArray(tc)) {
+      throw new Error('Invalid chain parameters: triggerCondition must be an object with a type field')
+    }
+    const tcObj = tc as Record<string, unknown>
+    const validConditionTypes = ['complete', 'keyword', 'no_error', 'scheduled']
+    if (typeof tcObj.type !== 'string' || !validConditionTypes.includes(tcObj.type)) {
+      throw new Error('Invalid chain parameters: triggerCondition.type must be one of: complete, keyword, no_error, scheduled')
+    }
+    const triggerCondition: import('@shared/types').TaskChain['triggerCondition'] = {
+      type: tcObj.type as 'complete' | 'keyword' | 'no_error' | 'scheduled',
+      ...(typeof tcObj.keyword === 'string' ? { keyword: tcObj.keyword } : {}),
+      ...(typeof tcObj.cronExpression === 'string' ? { cronExpression: tcObj.cronExpression } : {}),
+      ...(typeof tcObj.intervalMinutes === 'number' ? { intervalMinutes: tcObj.intervalMinutes } : {})
+    }
+    const validatedChain: Omit<import('@shared/types').TaskChain, 'id' | 'createdAt'> = {
+      name: chain.name,
+      triggerAgentId: chain.triggerAgentId,
+      targetAgentId: chain.targetAgentId,
+      messageTemplate: chain.messageTemplate,
+      triggerCondition,
+      onError: chain.onError === 'skip' || chain.onError === 'notify_only' ? chain.onError : 'stop',
+      isActive: typeof chain.isActive === 'boolean' ? chain.isActive : true
+    }
+    const created = database.createChain(validatedChain)
     chainScheduler?.syncJobs()
     return created
   })
@@ -710,8 +748,18 @@ function setupIPC(): void {
   // Workspaces
   ipcMain.handle('workspace:create', (_event, params: unknown) => {
     const p = params as Record<string, unknown>
-    if (!p.name || typeof p.name !== 'string') throw new Error('name is required')
-    return database.createWorkspace(p as unknown as import('@shared/types').CreateWorkspaceParams)
+    if (!p || typeof p !== 'object' || Array.isArray(p)) throw new Error('Invalid params')
+    if (typeof p.name !== 'string' || !p.name.trim()) throw new Error('name is required')
+    if (typeof p.path !== 'string' || !p.path.trim()) throw new Error('path is required')
+    const connectionType = p.connectionType === 'ssh' ? 'ssh' as const : 'local' as const
+    const validated: import('@shared/types').CreateWorkspaceParams = {
+      name: p.name,
+      path: p.path,
+      connectionType,
+      ...(typeof p.color === 'string' ? { color: p.color } : {}),
+      ...(connectionType === 'ssh' && p.sshConfig && typeof p.sshConfig === 'object' ? { sshConfig: p.sshConfig as import('@shared/types').CreateWorkspaceParams['sshConfig'] } : {})
+    }
+    return database.createWorkspace(validated)
   })
 
   ipcMain.handle('workspace:list', () => {
@@ -858,7 +906,26 @@ function setupIPC(): void {
   })
 
   ipcMain.handle('settings:update', (_event, updates: Record<string, unknown>) => {
-    return database.updateSettings(updates)
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      throw new Error('Invalid settings updates')
+    }
+    const validated: Partial<import('@shared/types').AppSettings> = {}
+    if ('usePtyMode' in updates && typeof updates.usePtyMode === 'boolean') {
+      validated.usePtyMode = updates.usePtyMode
+    }
+    if ('composerHeight' in updates && typeof updates.composerHeight === 'number') {
+      validated.composerHeight = updates.composerHeight
+    }
+    if ('notifications' in updates && updates.notifications && typeof updates.notifications === 'object' && !Array.isArray(updates.notifications)) {
+      const n = updates.notifications as Record<string, unknown>
+      validated.notifications = {
+        enabled: typeof n.enabled === 'boolean' ? n.enabled : true,
+        taskComplete: typeof n.taskComplete === 'boolean' ? n.taskComplete : true,
+        approvalRequired: typeof n.approvalRequired === 'boolean' ? n.approvalRequired : true,
+        errors: typeof n.errors === 'boolean' ? n.errors : true
+      }
+    }
+    return database.updateSettings(validated)
   })
 
   // Database backup/export
@@ -1185,9 +1252,10 @@ function setupPtyIPC(): void {
     if (typeof agentId !== 'string' || typeof data !== 'string') throw new Error('Invalid params')
     if (sshSessionManager.hasSession(agentId)) {
       sshSessionManager.writeInput(agentId, data)
-    } else {
+    } else if (ptySessionManager.hasSession(agentId)) {
       ptySessionManager.writeInput(agentId, data)
     }
+    // If no session exists for this agentId, silently ignore (session may have been destroyed)
   })
 
   ipcMain.handle('pty:resize', async (_event, agentId: string, cols: number, rows: number) => {

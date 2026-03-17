@@ -69,6 +69,21 @@ export class SshSessionManager {
 
     return new Promise((resolve, reject) => {
       const client = new Client()
+      let settled = false
+
+      const safeReject = (err: Error): void => {
+        if (settled) return
+        settled = true
+        this.sessions.delete(agent.id)
+        this.database.updateAgent(agent.id, { status: 'error' })
+        this.onStatusChange(agent.id, 'error')
+        reject(err)
+      }
+
+      // Register error handler BEFORE connect to catch all connection errors
+      client.on('error', (err) => {
+        safeReject(err)
+      })
 
       client.on('ready', () => {
         const session: SshSession = {
@@ -92,7 +107,7 @@ export class SshSessionManager {
 
         client.shell({ term: 'xterm-256color', cols, rows }, (err, channel) => {
           if (err) {
-            reject(err)
+            safeReject(err)
             return
           }
 
@@ -116,15 +131,9 @@ export class SshSessionManager {
 
           this.database.updateAgent(agent.id, { status: 'active' })
           this.onStatusChange(agent.id, 'active')
+          settled = true
           resolve()
         })
-      })
-
-      client.on('error', (err) => {
-        this.sessions.delete(agent.id)
-        this.database.updateAgent(agent.id, { status: 'error' })
-        this.onStatusChange(agent.id, 'error')
-        reject(err)
       })
 
       client.connect(connectConfig)

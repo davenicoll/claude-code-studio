@@ -180,37 +180,49 @@ export function Composer({ agentId, disabled = false, className }: ComposerProps
   // Create new template
   const handleCreateTemplate = useCallback(async () => {
     if (!formLabel.trim() || !formValue.trim()) return
-    const created = await window.api.createTemplate({
-      label: formLabel.trim(),
-      value: formValue.trim(),
-      category: formCategory
-    })
-    addTemplate(created)
-    setFormLabel('')
-    setFormValue('')
-    setFormCategory('custom')
-    setShowCreateForm(false)
+    try {
+      const created = await window.api.createTemplate({
+        label: formLabel.trim(),
+        value: formValue.trim(),
+        category: formCategory
+      })
+      addTemplate(created)
+      setFormLabel('')
+      setFormValue('')
+      setFormCategory('custom')
+      setShowCreateForm(false)
+    } catch (err) {
+      console.error('Failed to create template:', err)
+    }
   }, [formLabel, formValue, formCategory, addTemplate])
 
   // Update existing template
   const handleUpdateTemplate = useCallback(async () => {
     if (!editingTemplate || !formLabel.trim() || !formValue.trim()) return
-    const updated = await window.api.updateTemplate(editingTemplate.id, {
-      label: formLabel.trim(),
-      value: formValue.trim(),
-      category: formCategory
-    })
-    storeUpdateTemplate(editingTemplate.id, updated)
-    setEditingTemplate(null)
-    setFormLabel('')
-    setFormValue('')
-    setFormCategory('custom')
+    try {
+      const updated = await window.api.updateTemplate(editingTemplate.id, {
+        label: formLabel.trim(),
+        value: formValue.trim(),
+        category: formCategory
+      })
+      storeUpdateTemplate(editingTemplate.id, updated)
+      setEditingTemplate(null)
+      setFormLabel('')
+      setFormValue('')
+      setFormCategory('custom')
+    } catch (err) {
+      console.error('Failed to update template:', err)
+    }
   }, [editingTemplate, formLabel, formValue, formCategory, storeUpdateTemplate])
 
   // Delete template
   const handleDeleteTemplate = useCallback(async (id: string) => {
-    await window.api.deleteTemplate(id)
-    removeTemplate(id)
+    try {
+      await window.api.deleteTemplate(id)
+      removeTemplate(id)
+    } catch (err) {
+      console.error('Failed to delete template:', err)
+    }
   }, [removeTemplate])
 
   // Start editing

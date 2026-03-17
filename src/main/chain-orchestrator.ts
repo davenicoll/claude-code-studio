@@ -194,7 +194,9 @@ export class ChainOrchestrator {
       return
     }
 
-    const prevResult = this.lastOutputByAgent.get(triggerAgentId) ?? ''
+    const rawPrevResult = this.lastOutputByAgent.get(triggerAgentId)
+    // Guard: if no previous output exists, use empty string; also truncate to last 10,000 chars
+    const prevResult = rawPrevResult?.slice(-10000) ?? ''
     const message = this.resolveTemplate(chain.messageTemplate, {
       prev_result: prevResult,
       agent_name: triggerAgent?.name ?? triggerAgentId,
