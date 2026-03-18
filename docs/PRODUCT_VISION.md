@@ -1,7 +1,7 @@
 # Claude Code Studio — Product Vision
 
-> AI Agent Workspace Manager
-> Claude Code を本気で使う人のための、マルチワークスペース管理ツール
+> AI Agent Workspace Studio
+> Claude Code を本気で使う人のための、マルチワークスペース管理スタジオ
 
 ## Problem Statement
 
