@@ -310,6 +310,12 @@ export class Database {
     return agent
   }
 
+  deleteAgent(id: string): void {
+    this.data.agents = this.data.agents.filter((a) => a.id !== id)
+    this.data.messages = this.data.messages.filter((m) => m.agentId !== id)
+    this.scheduleSave()
+  }
+
   // Messages (capped at 200 per agent to prevent unbounded memory growth)
   private static readonly MAX_MESSAGES_PER_AGENT = 200
 

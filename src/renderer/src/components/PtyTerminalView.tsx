@@ -6,7 +6,7 @@ import { cn } from '../lib/utils'
 import { getStatusBadge } from '../lib/status'
 import { RotateCw, Square, Terminal, AlertCircle, Pin, PinOff, Server, Link } from 'lucide-react'
 import { XtermTerminal } from './XtermTerminal'
-import { Composer } from './Composer'
+import { TerminalToolbar } from './TerminalToolbar'
 import { SessionRecoveryDialog } from './SessionRecoveryDialog'
 import type { Agent, Workspace } from '@shared/types'
 
@@ -225,10 +225,7 @@ export function PtyTerminalView({ agentId, compact = false }: PtyTerminalViewPro
           </button>
         </div>
       )}
-      <Composer
-        agentId={agentId}
-        disabled={isInputDisabled}
-      />
+      <TerminalToolbar agentId={agentId} />
       {showRecovery && agent && (
         <SessionRecoveryDialog
           agentId={agentId}

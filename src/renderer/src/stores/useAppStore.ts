@@ -6,7 +6,7 @@ interface AppState {
   agents: Agent[]
   selectedAgentId: string | null
   setAgents: (agents: Agent[]) => void
-  setSelectedAgent: (id: string | null) => void
+  setSelectedAgent: (id: string | null, assignToPane?: boolean) => void
   updateAgentInList: (id: string, updates: Partial<Agent>) => void
   addAgent: (agent: Agent) => void
   removeAgent: (id: string) => void
@@ -94,19 +94,22 @@ export const useAppStore = create<AppState>((set, get) => ({
   agents: [],
   selectedAgentId: null,
   setAgents: (agents) => set({ agents }),
-  setSelectedAgent: (id) => set((s) => {
+  setSelectedAgent: (id, assignToPane = true) => set((s) => {
     if (s.paneLayout > 1) {
-      const newPaneAgentIds = [...s.paneAgentIds]
       if (id === null) {
-        // Switching to dashboard: clear pane 0
+        const newPaneAgentIds = [...s.paneAgentIds]
         newPaneAgentIds[0] = null
         return { selectedAgentId: null, showDashboard: true, paneAgentIds: newPaneAgentIds }
       }
-      // Selecting an agent: assign to first empty pane, or pane 0 if all full
-      const emptyIdx = newPaneAgentIds.findIndex((pid) => !pid)
-      const targetIdx = emptyIdx !== -1 ? emptyIdx : 0
-      newPaneAgentIds[targetIdx] = id
-      return { selectedAgentId: id, showDashboard: false, paneAgentIds: newPaneAgentIds }
+      // Only assign to a pane if explicitly requested (sidebar click, not hover)
+      if (assignToPane && !s.paneAgentIds.includes(id)) {
+        const newPaneAgentIds = [...s.paneAgentIds]
+        const emptyIdx = newPaneAgentIds.findIndex((pid) => !pid)
+        const targetIdx = emptyIdx !== -1 ? emptyIdx : 0
+        newPaneAgentIds[targetIdx] = id
+        return { selectedAgentId: id, showDashboard: false, paneAgentIds: newPaneAgentIds }
+      }
+      return { selectedAgentId: id, showDashboard: false }
     }
     return { selectedAgentId: id, showDashboard: id === null }
   }),

@@ -20,7 +20,8 @@ import {
   Pin,
   PinOff,
   Download,
-  ArrowUpDown
+  ArrowUpDown,
+  Trash2
 } from 'lucide-react'
 import { Smile } from 'lucide-react'
 import { cn } from '../lib/utils'
@@ -244,14 +245,16 @@ export function AgentList(): JSX.Element {
     const agent = agents.find((a) => a.id === agentId)
     if (!agent) return
     setContextMenu(null)
-    if (!confirm(t('agent.confirmArchive', 'Archive agent "{{name}}"?', { name: agent.name }))) return
+    const confirmed = await window.api.confirm(t('agent.confirmArchive', 'Archive agent "{{name}}"?', { name: agent.name }))
+    if (!confirmed) return
     try {
       await window.api.archiveAgent(agentId)
+      // Immediately update store — don't rely on IPC event alone
+      useAppStore.getState().updateAgentInList(agentId, { status: 'archived' })
       const remaining = agents.filter((a) => a.id !== agentId && a.status !== 'archived')
       if (selectedAgentId === agentId) {
         setSelectedAgent(remaining.length > 0 ? remaining[0].id : null)
       }
-      // Reload is done by status change event
     } catch (err) {
       showToast(err instanceof Error ? err.message : String(err), 'error')
     }
@@ -263,11 +266,30 @@ export function AgentList(): JSX.Element {
   const handleUnarchiveAgent = useCallback(async (agentId: string) => {
     try {
       await window.api.unarchiveAgent(agentId)
+      useAppStore.getState().updateAgentInList(agentId, { status: 'idle' })
       showToast(t('toast.agentRestored', 'Agent restored'), 'success')
     } catch (err) {
       showToast(err instanceof Error ? err.message : String(err), 'error')
     }
   }, [])
+
+  const handleDeleteAgent = useCallback(async (agentId: string) => {
+    const agent = agents.find((a) => a.id === agentId)
+    if (!agent) return
+    setContextMenu(null)
+    const confirmed = await window.api.confirm(t('agent.confirmDelete', 'Permanently delete agent "{{name}}"? This cannot be undone.', { name: agent.name }))
+    if (!confirmed) return
+    try {
+      await window.api.deleteAgent(agentId)
+      useAppStore.getState().removeAgent(agentId)
+      const remaining = agents.filter((a) => a.id !== agentId)
+      if (selectedAgentId === agentId) {
+        setSelectedAgent(remaining.length > 0 ? remaining[0].id : null)
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : String(err), 'error')
+    }
+  }, [agents, selectedAgentId, setSelectedAgent])
 
   const handleRestartAgent = useCallback(async (agentId: string) => {
     setContextMenu(null)
@@ -670,6 +692,13 @@ export function AgentList(): JSX.Element {
               <Archive size={12} />
               {t('agent.actions.archive')}
             </button>
+            <button
+              onClick={() => handleDeleteAgent(ctxAgent.id)}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-muted/50 text-red-500 transition-colors"
+            >
+              <Trash2 size={12} />
+              {t('agent.actions.delete', 'Delete')}
+            </button>
             {/* Emoji picker inline */}
             {emojiPickerTarget === ctxAgent.id && (
               <div className="relative">
@@ -732,6 +761,13 @@ export function AgentList(): JSX.Element {
                     title={t('agent.actions.restore', 'Restore')}
                   >
                     <ArchiveRestore size={12} className="text-muted-foreground" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteAgent(agent.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-accent transition-all"
+                    title={t('agent.actions.delete', 'Delete')}
+                  >
+                    <Trash2 size={12} className="text-red-400" />
                   </button>
                 </div>
               ))}

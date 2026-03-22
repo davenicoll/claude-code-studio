@@ -90,7 +90,8 @@ export function WorkspaceSwitcher({ className }: WorkspaceSwitcherProps): JSX.El
 
   const handleDelete = async (ws: Workspace, e: React.MouseEvent): Promise<void> => {
     e.stopPropagation()
-    if (!confirm(t('workspace.confirmDelete', 'Delete workspace "{{name}}"? Agents will remain but become unassigned.', { name: ws.name }))) return
+    const confirmed = await window.api.confirm(t('workspace.confirmDelete', 'Delete workspace "{{name}}"? Agents will remain but become unassigned.', { name: ws.name }))
+    if (!confirmed) return
     try {
       await window.api.deleteWorkspace(ws.id)
       if (activeWorkspaceId === ws.id) {
@@ -130,7 +131,8 @@ export function WorkspaceSwitcher({ className }: WorkspaceSwitcherProps): JSX.El
 
   const handleRemoveProject = async (ws: Workspace, projectPath: string, projectName: string, e: React.MouseEvent): Promise<void> => {
     e.stopPropagation()
-    if (!confirm(t('workspace.confirmRemoveProject', 'Remove "{{name}}" from workspace?', { name: projectName }))) return
+    const confirmed = await window.api.confirm(t('workspace.confirmRemoveProject', 'Remove "{{name}}" from workspace?', { name: projectName }))
+    if (!confirmed) return
     try {
       await window.api.removeProjectFromWorkspace(ws.id, projectPath)
       await loadWorkspaces()

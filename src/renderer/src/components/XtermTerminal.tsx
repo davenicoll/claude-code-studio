@@ -11,26 +11,26 @@ interface XtermTerminalProps {
 }
 
 const DARK_THEME = {
-  background: '#0d0d1a',
-  foreground: '#e0e0e0',
-  cursor: '#e0e0e0',
-  selectionBackground: '#3a3a5c',
-  black: '#1a1a2e',
-  red: '#ff6b6b',
-  green: '#51cf66',
-  yellow: '#fcc419',
-  blue: '#748ffc',
-  magenta: '#da77f2',
-  cyan: '#66d9e8',
-  white: '#e0e0e0',
-  brightBlack: '#555577',
-  brightRed: '#ff8787',
-  brightGreen: '#69db7c',
-  brightYellow: '#ffe066',
-  brightBlue: '#91a7ff',
-  brightMagenta: '#e599f7',
-  brightCyan: '#99e9f2',
-  brightWhite: '#ffffff'
+  background: '#09090b',
+  foreground: '#e4e4e7',
+  cursor: '#e4e4e7',
+  selectionBackground: '#27272a',
+  black: '#09090b',
+  red: '#f87171',
+  green: '#4ade80',
+  yellow: '#facc15',
+  blue: '#60a5fa',
+  magenta: '#c084fc',
+  cyan: '#22d3ee',
+  white: '#e4e4e7',
+  brightBlack: '#52525b',
+  brightRed: '#fca5a5',
+  brightGreen: '#86efac',
+  brightYellow: '#fde68a',
+  brightBlue: '#93c5fd',
+  brightMagenta: '#d8b4fe',
+  brightCyan: '#67e8f9',
+  brightWhite: '#fafafa'
 }
 
 const LIGHT_THEME = {
@@ -201,6 +201,7 @@ export function XtermTerminal({ agentId, theme = 'dark', fontSize = 13 }: XtermT
       ref={containerRef}
       className="h-full w-full overflow-hidden"
       style={{ minHeight: '100px' }}
+      onMouseEnter={() => terminalRef.current?.focus()}
     />
   )
 }

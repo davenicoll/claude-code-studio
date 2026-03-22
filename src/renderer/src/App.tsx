@@ -2,6 +2,7 @@ import { useEffect, useCallback, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Group, Panel, useDefaultLayout } from 'react-resizable-panels'
 import { useAppStore } from './stores/useAppStore'
+import { cn } from './lib/utils'
 import { TitleBar } from './components/TitleBar'
 import { AgentList } from './components/AgentList'
 import { TerminalView } from './components/TerminalView'
@@ -25,21 +26,12 @@ interface PaneGridProps {
 }
 
 function PaneGrid({ onOpenScanner }: PaneGridProps): JSX.Element {
-  const { selectedAgentId, paneLayout, paneAgentIds, setPaneAgent, swapPanes, agents, usePtyMode } = useAppStore()
+  const { selectedAgentId, setSelectedAgent, paneLayout, paneAgentIds, setPaneAgent, swapPanes, agents, usePtyMode } = useAppStore()
   const { t } = useTranslation()
 
   // For single pane, use selectedAgentId directly
-  // For multi-pane, use paneAgentIds
-  useEffect(() => {
-    if (paneLayout === 1) return
-    // Auto-assign selected agent to first empty pane
-    if (selectedAgentId && !paneAgentIds.includes(selectedAgentId)) {
-      const emptyIdx = paneAgentIds.findIndex((id) => !id)
-      if (emptyIdx !== -1) {
-        setPaneAgent(emptyIdx, selectedAgentId)
-      }
-    }
-  }, [selectedAgentId, paneLayout, paneAgentIds, setPaneAgent])
+  // For multi-pane: only auto-assign when user explicitly clicks an agent in sidebar
+  // (not on every selectedAgentId change — that causes closed panes to reappear)
 
   // Dashboard always renders full width regardless of pane layout
   if (!selectedAgentId) {
@@ -126,7 +118,19 @@ function PaneGrid({ onOpenScanner }: PaneGridProps): JSX.Element {
     )
 
     return (
-      <div className="flex flex-col h-full overflow-hidden">
+      <div
+        className={cn(
+          'flex flex-col h-full overflow-hidden transition-[box-shadow] duration-150',
+          paneLayout > 1 && selectedAgentId === agentId
+            ? 'ring-1 ring-primary/40'
+            : ''
+        )}
+        onMouseEnter={() => {
+          if (paneLayout > 1 && agentId && selectedAgentId !== agentId) {
+            setSelectedAgent(agentId, false)
+          }
+        }}
+      >
         {paneToolbar}
         <div className="flex-1 min-h-0 overflow-hidden">
           {usePtyMode ? (
@@ -311,6 +315,17 @@ export function App(): JSX.Element {
       window.api.getTeamStats().then(setTeamStats)
     })
 
+    const unsubDeleted = window.api.onAgentDeleted((agentId) => {
+      if (!isMountedRef.current) return
+      const { removeAgent, selectedAgentId, agents } = useAppStore.getState()
+      removeAgent(agentId)
+      if (selectedAgentId === agentId) {
+        const remaining = agents.filter((a) => a.id !== agentId)
+        useAppStore.getState().setSelectedAgent(remaining.length > 0 ? remaining[0].id : null)
+      }
+      window.api.getTeamStats().then(setTeamStats)
+    })
+
     const unsubNotification = window.api.onNotification((title, body) => {
       if (!isMountedRef.current) return
       showToast(title, body, title.includes('Error') ? 'error' : title.includes('Memory') ? 'warning' : 'warning')
@@ -362,6 +377,7 @@ export function App(): JSX.Element {
       isMountedRef.current = false
       unsubOutput()
       unsubStatus()
+      unsubDeleted()
       unsubNotification()
       unsubMemory()
       unsubAgentTeams()
@@ -423,12 +439,14 @@ export function App(): JSX.Element {
         e.preventDefault()
         if (selectedAgentId) {
           const agentToArchive = agents.find((a) => a.id === selectedAgentId)
-          // TODO: Replace with non-blocking dialog (custom modal)
-          if (agentToArchive && confirm(t('agent.confirmArchive', 'Archive agent "{{name}}"?', { name: agentToArchive.name }))) {
-            window.api.archiveAgent(selectedAgentId)
-            const remaining = agents.filter((a) => a.id !== selectedAgentId && a.status !== 'archived')
-            setSelectedAgent(remaining.length > 0 ? remaining[0].id : null)
-            loadAgents()
+          if (agentToArchive) {
+            window.api.confirm(t('agent.confirmArchive', 'Archive agent "{{name}}"?', { name: agentToArchive.name })).then((confirmed) => {
+              if (!confirmed) return
+              window.api.archiveAgent(selectedAgentId!)
+              const remaining = agents.filter((a) => a.id !== selectedAgentId && a.status !== 'archived')
+              setSelectedAgent(remaining.length > 0 ? remaining[0].id : null)
+              loadAgents()
+            })
           }
         }
       }

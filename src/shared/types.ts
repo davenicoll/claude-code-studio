@@ -321,6 +321,7 @@ export interface ElectronAPI {
   updateAgent: (id: string, updates: Partial<Agent>) => Promise<Agent>
   archiveAgent: (id: string) => Promise<void>
   unarchiveAgent: (id: string) => Promise<void>
+  deleteAgent: (id: string) => Promise<void>
 
   // Messaging
   sendMessage: (agentId: string, content: string) => Promise<void>
@@ -366,6 +367,8 @@ export interface ElectronAPI {
   onChainEvent: (callback: (event: { chainId: string; chainName: string; fromAgentId: string; toAgentId: string; status: string; message?: string; timestamp: string }) => void) => () => void
 
   // Dialog
+  listDirs: (partial: string) => Promise<{ name: string; path: string }[]>
+  confirm: (message: string, title?: string) => Promise<boolean>
   selectFolder: () => Promise<string | null>
   selectFile: (filters?: { name: string; extensions: string[] }[]) => Promise<string | null>
 
@@ -379,6 +382,7 @@ export interface ElectronAPI {
 
   // Events
   onAgentOutput: (callback: (agentId: string, message: ParsedOutputMessage) => void) => () => void
+  onAgentDeleted: (callback: (agentId: string) => void) => () => void
   onAgentStatusChange: (callback: (agentId: string, status: AgentStatus) => void) => () => void
   onNotification: (callback: (title: string, body: string) => void) => () => void
 

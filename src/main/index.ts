@@ -1,6 +1,13 @@
 import { app, shell, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage, dialog } from 'electron'
 import { autoUpdater } from 'electron-updater'
 
+// Fix Chromium/GTK warnings on Linux (driver-level, not fixable via packages)
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('disable-gpu-vsync')
+  // Suppress GLib-GObject handler warnings from GTK dialog cleanup
+  process.env.G_DEBUG = 'none'
+}
+
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -381,6 +388,25 @@ function setupIPC(): void {
     mainWindow?.webContents.send('agent:status-change', id, 'idle')
   })
 
+  ipcMain.handle('agent:delete', async (_event, id: string) => {
+    if (typeof id !== 'string') throw new Error('Invalid agent ID')
+    const { usePtyMode } = database.getSettings()
+    if (usePtyMode) {
+      if (sshSessionManager.hasSession(id)) {
+        sshSessionManager.stopSession(id)
+      } else {
+        ptySessionManager.stopSession(id)
+      }
+    } else {
+      await sessionManager.stopSession(id)
+    }
+    const timer = ptyParseTimers.get(id)
+    if (timer) { clearTimeout(timer); ptyParseTimers.delete(id) }
+    ptyParseBuffers.delete(id)
+    database.deleteAgent(id)
+    mainWindow?.webContents.send('agent:deleted', id)
+  })
+
   // Messaging
   ipcMain.handle('message:send', async (_event, agentId: string, content: string) => {
     if (typeof agentId !== 'string' || typeof content !== 'string') {
@@ -653,6 +679,64 @@ function setupIPC(): void {
       // Ignore polling errors
     }
   }, 15000)
+
+  // Confirm dialog (native Electron — avoids window.confirm() freeze on Linux)
+  ipcMain.handle('dialog:confirm', async (_event, message: string, title?: string) => {
+    if (!mainWindow) return false
+    const result = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Cancel', 'OK'],
+      defaultId: 1,
+      cancelId: 0,
+      title: title || 'Confirm',
+      message
+    })
+    return result.response === 1
+  })
+
+  // Path autocomplete — list directories matching partial input
+  ipcMain.handle('fs:listDirs', async (_event, partial: string) => {
+    if (typeof partial !== 'string') return []
+    const { readdirSync, statSync } = await import('fs')
+    const { resolve, dirname, basename, sep } = await import('path')
+    const { homedir } = await import('os')
+
+    try {
+      // Expand ~ to home directory
+      let expanded = partial.startsWith('~') ? partial.replace(/^~/, homedir()) : partial
+      expanded = resolve(expanded)
+
+      let dir: string
+      let prefix: string
+      try {
+        const s = statSync(expanded)
+        if (s.isDirectory()) {
+          dir = expanded
+          prefix = ''
+        } else {
+          dir = dirname(expanded)
+          prefix = basename(expanded).toLowerCase()
+        }
+      } catch {
+        dir = dirname(expanded)
+        prefix = basename(expanded).toLowerCase()
+      }
+
+      const entries = readdirSync(dir, { withFileTypes: true })
+      const dirs = entries
+        .filter((e) => e.isDirectory() && !e.name.startsWith('.'))
+        .filter((e) => !prefix || e.name.toLowerCase().startsWith(prefix))
+        .slice(0, 15)
+        .map((e) => ({
+          name: e.name,
+          path: dir + sep + e.name
+        }))
+
+      return dirs
+    } catch {
+      return []
+    }
+  })
 
   // Dialog
   ipcMain.handle('dialog:selectFolder', async () => {
