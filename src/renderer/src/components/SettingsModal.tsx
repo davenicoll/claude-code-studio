@@ -136,6 +136,17 @@ export function SettingsModal({ onClose }: SettingsModalProps): JSX.Element {
               >
                 日本語
               </button>
+              <button
+                onClick={() => handleLanguageChange('ru')}
+                className={cn(
+                  'flex-1 py-2 px-3 rounded-lg text-sm border transition-colors',
+                  i18n.language === 'ru'
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:bg-accent'
+                )}
+              >
+                Русский
+              </button>
             </div>
           </div>
 
