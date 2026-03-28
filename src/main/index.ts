@@ -128,7 +128,7 @@ app.whenReady().then(() => {
   // Reset stale agent statuses from previous session
   for (const agent of database.getAgents()) {
     if (['active', 'thinking', 'tool_running', 'creating'].includes(agent.status)) {
-      database.updateAgent(agent.id, { status: 'idle', claudeSessionId: null })
+      database.updateAgent(agent.id, { status: 'idle' })
     }
   }
 
