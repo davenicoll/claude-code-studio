@@ -6,6 +6,20 @@
 
 ---
 
+### Multi-Pane Layout — Run multiple agents side by side
+![Multi-Pane Layout](docs/images/multi-pane.png)
+
+### Activity Map — Real-time agent monitoring with cockpit overlay
+![Activity Map](docs/images/activity-map.png)
+
+### Config Map — Visualize CLAUDE.md, MCP, Hooks, Skills hierarchy
+![Config Map](docs/images/config-map.png)
+
+### Composer — Rich input with file attach, templates, Plan Mode
+![Composer](docs/images/composer.png)
+
+---
+
 <a id="english"></a>
 
 ## Overview
@@ -186,6 +200,8 @@ MIT - wat-hiroaki
 <a id="japanese"></a>
 
 ## 概要
+
+> スクリーンショットは[上部](#multi-pane-layout--run-multiple-agents-side-by-side)を参照
 
 Claude Code Studio は、複数の Claude Code CLI セッションを組織として管理する Electron デスクトップアプリです。以下の5つの課題を解決します:
 
