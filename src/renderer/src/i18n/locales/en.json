@@ -18,7 +18,9 @@
     "active": "active",
     "error": "err",
     "awaiting": "wait",
-    "toggleContextPane": "Toggle Context Pane"
+    "toggleContextPane": "Toggle Context Pane",
+    "splitHorizontal": "Split Right",
+    "splitVertical": "Split Down"
   },
   "pane": {
     "selectAgent": "Select an agent to start",

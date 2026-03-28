@@ -69,7 +69,7 @@ function MainLayout({ showRightPane, onOpenScanner, sidebarRef, sidebarCollapsed
         }}
       >
         <ErrorBoundary fallbackMessage="Sidebar failed to render">
-          <AgentList />
+          <AgentList onCollapseSidebar={toggleSidebar} />
         </ErrorBoundary>
       </Panel>
       <ResizeHandle />

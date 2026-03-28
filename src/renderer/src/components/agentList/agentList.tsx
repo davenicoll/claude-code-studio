@@ -23,7 +23,11 @@ import { AgentContextMenu } from './agentContextMenu'
 import { useAgentListGroups } from './useAgentListGroups'
 import type { SortBy } from './useAgentListGroups'
 
-export function AgentList(): JSX.Element {
+interface AgentListProps {
+  onCollapseSidebar?: () => void
+}
+
+export function AgentList({ onCollapseSidebar }: AgentListProps = {}): JSX.Element {
   const { t } = useTranslation()
   const { agents, setSelectedAgent } = useAppStore()
   const [search, setSearch] = useState('')
@@ -110,6 +114,7 @@ export function AgentList(): JSX.Element {
           setShowCreate(true)
         }}
         appVersion={appVersion}
+        onCollapseSidebar={onCollapseSidebar}
       />
 
       <div className="flex-1 overflow-y-auto" role="list" aria-label={t('agent.listLabel', 'Agent list')}>

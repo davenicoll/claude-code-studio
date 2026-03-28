@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, ArrowUpDown } from 'lucide-react'
+import { Plus, Search, ArrowUpDown, PanelLeftClose } from 'lucide-react'
 import { WorkspaceSwitcher } from '@components/WorkspaceSwitcher'
 import type { SortBy } from './useAgentListGroups'
 
@@ -10,6 +10,7 @@ interface AgentListSearchProps {
   onCycleSortBy: () => void
   onCreateNew: () => void
   appVersion: string
+  onCollapseSidebar?: () => void
 }
 
 export function AgentListSearch({
@@ -18,7 +19,8 @@ export function AgentListSearch({
   sortBy,
   onCycleSortBy,
   onCreateNew,
-  appVersion: _appVersion
+  appVersion: _appVersion,
+  onCollapseSidebar
 }: AgentListSearchProps): JSX.Element {
   const { t } = useTranslation()
 
@@ -50,6 +52,15 @@ export function AgentListSearch({
             >
               <Plus size={16} />
             </button>
+            {onCollapseSidebar && (
+              <button
+                onClick={onCollapseSidebar}
+                className="p-1 rounded hover:bg-accent text-muted-foreground transition-colors"
+                title={t('sidebar.collapse')}
+              >
+                <PanelLeftClose size={14} />
+              </button>
+            )}
           </div>
         </div>
         <div className="relative">

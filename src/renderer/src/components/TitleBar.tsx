@@ -6,18 +6,48 @@ import {
   LayoutDashboard,
   PanelRight,
   Settings,
-  RotateCcw
+  RotateCcw,
+  Columns2,
+  Rows2
 } from 'lucide-react'
-import { countLeaves } from '@appTypes/layout'
+import { countLeaves, type LayoutNode } from '@appTypes/layout'
 import { cn } from '@lib/utils'
 
 const platform = window.api.getPlatform()
 
 export function TitleBar(): JSX.Element {
   const { t } = useTranslation()
-  const { toggleDashboard, toggleRightPane, showDashboard, resetLayout, layoutTree, teamStats } = useAppStore()
+  const { toggleDashboard, toggleRightPane, showDashboard, resetLayout, layoutTree, teamStats, selectedAgentId, splitPane } = useAppStore()
   const [showSettings, setShowSettings] = useState(false)
   const leafCount = countLeaves(layoutTree)
+
+  const findActiveLeafId = (node: LayoutNode): string | null => {
+    if (node.type === 'leaf') {
+      if (node.agentId === selectedAgentId) return node.id
+      return null
+    }
+    for (const child of node.children) {
+      const found = findActiveLeafId(child)
+      if (found) return found
+    }
+    return null
+  }
+
+  const findFirstLeafId = (node: LayoutNode): string | null => {
+    if (node.type === 'leaf') return node.id
+    for (const child of node.children) {
+      const found = findFirstLeafId(child)
+      if (found) return found
+    }
+    return null
+  }
+
+  const handleSplitPane = (direction: 'horizontal' | 'vertical'): void => {
+    const leafId = findActiveLeafId(layoutTree) ?? findFirstLeafId(layoutTree)
+    if (leafId) {
+      splitPane(leafId, direction, null, 'after')
+    }
+  }
 
   return (
     <>
@@ -55,6 +85,20 @@ export function TitleBar(): JSX.Element {
             </button>
           )}
 
+          <button
+            onClick={() => handleSplitPane('horizontal')}
+            className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
+            title={t('titleBar.splitHorizontal', 'Split Right')}
+          >
+            <Columns2 size={16} />
+          </button>
+          <button
+            onClick={() => handleSplitPane('vertical')}
+            className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
+            title={t('titleBar.splitVertical', 'Split Down')}
+          >
+            <Rows2 size={16} />
+          </button>
           <button
             onClick={toggleDashboard}
             className={`p-1.5 rounded hover:bg-accent transition-colors ${showDashboard ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}

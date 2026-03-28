@@ -58,7 +58,7 @@ interface AppState {
   // Layout (tree-based split layout)
   layoutTree: LayoutNode
   setLayoutTree: (tree: LayoutNode) => void
-  splitPane: (leafId: string, direction: 'horizontal' | 'vertical', agentId: string, position: 'before' | 'after') => void
+  splitPane: (leafId: string, direction: 'horizontal' | 'vertical', agentId: string | null, position: 'before' | 'after') => void
   setLeafAgent: (leafId: string, agentId: string | null) => void
   removeLeaf: (leafId: string) => void
   moveAgent: (fromLeafId: string, toLeafId: string, position: DropPosition) => void
@@ -223,9 +223,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ layoutTree: tree })
   },
   splitPane: (leafId, direction, agentId, position) => set((s) => {
-    const newTree = splitLeaf(s.layoutTree, leafId, direction, agentId, position)
+    const newTree = splitLeaf(s.layoutTree, leafId, direction, agentId || null, position)
     localStorage.setItem('layoutTree', JSON.stringify(newTree))
-    return { layoutTree: newTree, selectedAgentId: agentId, showDashboard: false }
+    return {
+      layoutTree: newTree,
+      ...(agentId ? { selectedAgentId: agentId, showDashboard: false } : {})
+    }
   }),
   setLeafAgent: (leafId, agentId) => set((s) => {
     const newTree = setLeafAgentInTree(s.layoutTree, leafId, agentId)

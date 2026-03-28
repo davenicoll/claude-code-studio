@@ -79,7 +79,7 @@ export function splitLeaf(
   tree: LayoutNode,
   leafId: string,
   direction: 'horizontal' | 'vertical',
-  newAgentId: string,
+  newAgentId: string | null,
   position: 'before' | 'after'
 ): LayoutNode {
   const newTree = cloneTree(tree)
