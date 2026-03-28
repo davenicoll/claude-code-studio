@@ -19,10 +19,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 )
 
 // Linux: force repaint when window regains visibility after desktop switch
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    document.body.style.display = 'none'
-    void document.body.offsetHeight
-    document.body.style.display = ''
-  }
-})
+if (window.api.getPlatform() === 'linux') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      document.body.style.display = 'none'
+      void document.body.offsetHeight
+      document.body.style.display = ''
+    }
+  })
+}

@@ -9,6 +9,9 @@ import {
   RotateCcw
 } from 'lucide-react'
 import { countLeaves } from '@appTypes/layout'
+import { cn } from '@lib/utils'
+
+const platform = window.api.getPlatform()
 
 export function TitleBar(): JSX.Element {
   const { t } = useTranslation()
@@ -18,7 +21,11 @@ export function TitleBar(): JSX.Element {
 
   return (
     <>
-      <div className="titlebar-drag flex items-center justify-between h-9 bg-card border-b border-border px-4 select-none">
+      <div className={cn(
+        'titlebar-drag flex items-center justify-between h-9 bg-card border-b border-border px-4 select-none',
+        platform === 'win32' && 'pr-[140px]',
+        platform === 'darwin' && 'pl-[80px]'
+      )}>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-primary" />
           <span className="text-sm font-semibold">{t('app.title')}</span>

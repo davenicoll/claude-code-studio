@@ -267,7 +267,7 @@ Claude Code Studio — десктопное Electron-приложение для
 ### Быстрый старт
 
 ```bash
-git clone https://github.com/Blysspeak/claude-code-studio.git
+git clone https://github.com/wat-hiroaki/claude-code-studio.git
 cd claude-code-studio
 npm install
 npm run dev

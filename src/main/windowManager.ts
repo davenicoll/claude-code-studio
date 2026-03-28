@@ -76,17 +76,11 @@ export function createWindow(database: Database): BrowserWindow {
     mainWindow?.show()
   })
 
-  // Linux: force repaint when window regains visibility after desktop switch
+  // Linux: force compositor repaint when window regains visibility after desktop switch
   if (process.platform === 'linux') {
     const forceRepaint = (): void => {
       if (!mainWindow || mainWindow.isDestroyed()) return
       mainWindow.webContents.invalidate()
-      // Force a layout recalc via CSS toggle
-      mainWindow.webContents.executeJavaScript(`
-        document.body.style.display = 'none';
-        document.body.offsetHeight;
-        document.body.style.display = '';
-      `).catch(() => {})
     }
     mainWindow.on('show', forceRepaint)
     mainWindow.on('focus', forceRepaint)
