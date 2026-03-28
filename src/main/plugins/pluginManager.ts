@@ -30,6 +30,23 @@ export class PluginManager {
 
   constructor() {}
 
+  /** Filter out sensitive environment variables before passing to plugin processes */
+  private static getSanitizedEnv(): Record<string, string> {
+    const sensitivePatterns = [
+      /^(ANTHROPIC|OPENAI|AZURE|AWS|GCP|GOOGLE|GITHUB|GITLAB)_/i,
+      /_KEY$/i, /_TOKEN$/i, /_SECRET$/i, /_PASSWORD$/i, /_CREDENTIAL/i,
+      /^DATABASE_URL$/i, /^REDIS_URL$/i, /^MONGO/i,
+      /^NPM_TOKEN$/i, /^NUGET_API_KEY$/i, /^PRIVATE_/i
+    ]
+    const filtered: Record<string, string> = {}
+    for (const [key, value] of Object.entries(process.env)) {
+      if (value && !sensitivePatterns.some((p) => p.test(key))) {
+        filtered[key] = value
+      }
+    }
+    return filtered
+  }
+
   /** Scan bundled and user plugin directories for manifest.json files */
   discover(): void {
     const dirs: string[] = []
@@ -127,7 +144,7 @@ export class PluginManager {
 
     const proc = spawn(command, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env }
+      env: PluginManager.getSanitizedEnv()
     })
 
     const conn: McpConnection = {

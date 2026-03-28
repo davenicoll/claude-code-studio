@@ -165,13 +165,13 @@ export function LeafPane({ leafId, agentId }: LeafPaneProps): JSX.Element {
       <div className="flex-1 min-h-0 overflow-hidden">
         {usePtyMode ? (
           <PtyTerminalView
-            key={`${leafId}-${agentId}`}
+            key={agentId}
             agentId={agentId}
             compact={compact}
           />
         ) : (
           <TerminalView
-            key={`${leafId}-${agentId}`}
+            key={agentId}
             agentId={agentId}
             compact={compact}
             onClose={() => removeLeaf(leafId)}

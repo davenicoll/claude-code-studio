@@ -47,8 +47,24 @@ export function registerSystemHandlers(deps: SystemHandlerDeps): void {
     const { homedir } = await import('os')
 
     try {
-      let expanded = partial.startsWith('~') ? partial.replace(/^~/, homedir()) : partial
+      const home = homedir()
+      let expanded = partial.startsWith('~') ? partial.replace(/^~/, home) : partial
       expanded = resolve(expanded)
+
+      // Security: restrict enumeration to safe boundaries
+      const normalizedExpanded = expanded.replace(/\\/g, '/')
+      const normalizedHome = home.replace(/\\/g, '/')
+      const allowedRoots = [normalizedHome]
+      if (process.platform === 'win32') {
+        // Allow drive root listing (e.g. C:\, D:\) and Users directory
+        allowedRoots.push('C:/Users', 'D:/', 'E:/')
+      } else {
+        allowedRoots.push('/home', '/Users', '/tmp', '/var/www', '/opt')
+      }
+      const isAllowed = allowedRoots.some((root) => normalizedExpanded.startsWith(root))
+      // Allow drive root on Windows (e.g. "C:/")
+      const isDriveRoot = process.platform === 'win32' && /^[A-Z]:[\\/]?$/.test(expanded)
+      if (!isAllowed && !isDriveRoot) return []
 
       let dir: string
       let prefix: string
