@@ -446,6 +446,15 @@
     "collapse": "Collapse sidebar (Ctrl+B)",
     "expand": "Expand sidebar (Ctrl+B)"
   },
+  "notes": {
+    "tab": "Notes",
+    "lines": "lines",
+    "chars": "chars",
+    "empty": "Empty",
+    "copy": "Copy all",
+    "clear": "Clear",
+    "placeholder": "Free notes — draft prompts, paste snippets, jot ideas..."
+  },
   "common": {
     "create": "Create",
     "cancel": "Cancel",

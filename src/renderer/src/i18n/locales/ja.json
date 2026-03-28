@@ -446,6 +446,15 @@
     "collapse": "サイドバーを折りたたむ (Ctrl+B)",
     "expand": "サイドバーを展開 (Ctrl+B)"
   },
+  "notes": {
+    "tab": "メモ",
+    "lines": "行",
+    "chars": "文字",
+    "empty": "空",
+    "copy": "全文コピー",
+    "clear": "クリア",
+    "placeholder": "自由メモ — プロンプト下書き、スニペット貼り付け、アイデアメモ..."
+  },
   "common": {
     "create": "作成",
     "cancel": "キャンセル",

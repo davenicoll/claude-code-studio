@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@stores/useAppStore'
 import { getInitials } from '@lib/status'
-import { FolderOpen, Clock, Cpu, Link, Inbox, User, FileText, RotateCw, Square, AlertCircle, Globe, Brain } from 'lucide-react'
+import { FolderOpen, Clock, Cpu, Link, StickyNote, User, FileText, RotateCw, Square, AlertCircle, Globe, Brain } from 'lucide-react'
 import { showToast } from '@components/ToastContainer'
 import { TaskChainPanel } from '@components/TaskChainPanel'
-import { InboxPanel } from '@components/InboxPanel'
+import { NotesPanel } from '@components/NotesPanel'
 import { AgentProfileView } from '@components/AgentProfileView'
 import { BrowserPanel } from '@components/BrowserPanel'
 import type { PluginContextTab as PluginTab } from '@shared/types'
 
-type ContextTab = 'details' | 'profile' | 'inbox' | 'chains' | 'browser' | string
+type ContextTab = 'details' | 'profile' | 'notes' | 'chains' | 'browser' | string
 
 export function ContextPane(): JSX.Element {
   const { t } = useTranslation()
@@ -42,9 +42,9 @@ export function ContextPane(): JSX.Element {
         <User size={12} />
         {t('profile.tab', 'Profile')}
       </button>
-      <button onClick={() => setActiveTab('inbox')} className={tabClass('inbox')}>
-        <Inbox size={12} />
-        {t('inbox.title')}
+      <button onClick={() => setActiveTab('notes')} className={tabClass('notes')}>
+        <StickyNote size={12} />
+        {t('notes.tab', 'Notes')}
       </button>
       <button onClick={() => setActiveTab('chains')} className={tabClass('chains')}>
         <Link size={12} />
@@ -85,11 +85,11 @@ export function ContextPane(): JSX.Element {
     )
   }
 
-  if (activeTab === 'inbox') {
+  if (activeTab === 'notes') {
     return (
       <div className="h-full border-l border-border bg-card flex flex-col overflow-hidden">
         {renderTabs()}
-        <InboxPanel onSelectAgent={setSelectedAgent} />
+        <NotesPanel />
       </div>
     )
   }
