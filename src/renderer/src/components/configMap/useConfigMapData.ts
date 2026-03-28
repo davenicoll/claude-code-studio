@@ -154,10 +154,6 @@ export interface UseConfigMapDataResult {
   handleNodeHoverChange: (node: ConfigNode | null) => void
   handleContainerMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void
 
-  // Map dimensions & resize
-  mapHeight: number
-  setMapHeight: (h: number) => void
-
   // Pan/zoom
   pan: { x: number; y: number }
   setPan: (p: { x: number; y: number }) => void
@@ -247,9 +243,6 @@ export function useConfigMapData(workspaces: Workspace[]): UseConfigMapDataResul
   const [selectedNode, setSelectedNode] = useState<ConfigNode | null>(null)
   const [hoveredNode, setHoveredNode] = useState<ConfigNode | null>(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
-
-  // Map height (resizable)
-  const [mapHeight, setMapHeight] = useState(500)
 
   // Pan/zoom
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -437,8 +430,6 @@ export function useConfigMapData(workspaces: Workspace[]): UseConfigMapDataResul
     handleNodeClick,
     handleNodeHoverChange,
     handleContainerMouseMove,
-    mapHeight,
-    setMapHeight,
     pan,
     setPan,
     scale,

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Maximize2, X, Globe, FolderOpen, GripHorizontal } from 'lucide-react'
+import { Maximize2, X, Globe, FolderOpen } from 'lucide-react'
 import { cyberPaletteDark, cyberPaletteLight, useResolvedTheme } from '@lib/cyber-theme'
 import { ConfigMapDetailPanel } from '@components/configMap/configMapDetail'
 import { ConfigMapOverview } from '@components/ConfigMapOverview'
@@ -22,13 +22,10 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
   // Overview mode
   if (state.viewMode === 'overview') {
     return (
-      <div className={state.isFullscreen ? 'h-full relative' : 'group'}>
-        <div style={state.isFullscreen ? { height: '100%' } : { height: `${state.mapHeight}px` }} className="relative">
-          <ViewModeTabs viewMode="overview" setViewMode={state.setViewMode} palette={palette} />
-          <FullscreenButton isFullscreen={state.isFullscreen} onToggle={state.handleToggleFullscreen} palette={palette} />
-          <ConfigMapOverview workspaces={workspaces} onDrillDown={state.handleDrillDown} />
-        </div>
-        {!state.isFullscreen && <ResizeHandle palette={palette} mapHeight={state.mapHeight} setMapHeight={state.setMapHeight} />}
+      <div className="h-full relative">
+        <ViewModeTabs viewMode="overview" setViewMode={state.setViewMode} palette={palette} />
+        <FullscreenButton isFullscreen={state.isFullscreen} onToggle={state.handleToggleFullscreen} palette={palette} />
+        <ConfigMapOverview workspaces={workspaces} onDrillDown={state.handleDrillDown} />
       </div>
     )
   }
@@ -36,8 +33,8 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
   // No project path
   if (!state.resolvedPath) {
     return (
-      <div className="w-full flex items-center justify-center border overflow-hidden font-mono relative rounded-md"
-        style={{ backgroundColor: palette.bg, borderColor: palette.panelBorder, height: `${state.mapHeight}px` }}>
+      <div className="w-full h-full flex items-center justify-center border overflow-hidden font-mono relative rounded-md"
+        style={{ backgroundColor: palette.bg, borderColor: palette.panelBorder }}>
         <div className="text-sm tracking-widest opacity-50 flex flex-col items-center" style={{ color: palette.textMuted }}>
           <span className="mb-2 uppercase">[ {t('configMap.noWorkspace')} ]</span>
           <span className="text-xs">{t('configMap.selectWorkspace')}</span>
@@ -49,8 +46,8 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
   // Loading
   if (state.loading) {
     return (
-      <div className="w-full flex items-center justify-center border overflow-hidden font-mono relative rounded-md"
-        style={{ backgroundColor: palette.bg, borderColor: palette.panelBorder, height: `${state.mapHeight}px` }}>
+      <div className="w-full h-full flex items-center justify-center border overflow-hidden font-mono relative rounded-md"
+        style={{ backgroundColor: palette.bg, borderColor: palette.panelBorder }}>
         <span className="animate-pulse tracking-widest" style={{ color: palette.cyan }}>SCANNING CONFIG...</span>
       </div>
     )
@@ -58,8 +55,8 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
 
   // Detail view
   return (
-    <div className={state.isFullscreen ? '' : 'group'}>
-      <div className="flex w-full" style={state.isFullscreen ? { height: '100%' } : { height: `${state.mapHeight}px` }}>
+    <div className="h-full">
+      <div className="flex w-full h-full">
         <div className="flex-1 min-w-0 flex flex-col">
           <ConfigMapToolbar
             viewMode={state.viewMode} setViewMode={state.setViewMode} palette={palette}
@@ -85,7 +82,6 @@ export function ConfigMap({ workspaces }: ConfigMapProps): JSX.Element {
           <ConfigMapDetailPanel node={state.selectedNode} conflicts={state.data.conflicts} onClose={() => state.setSelectedNode(null)} />
         )}
       </div>
-      {!state.isFullscreen && <ResizeHandle palette={palette} mapHeight={state.mapHeight} setMapHeight={state.setMapHeight} />}
     </div>
   )
 }
@@ -123,21 +119,3 @@ function FullscreenButton({ isFullscreen, onToggle, palette }: {
   )
 }
 
-function ResizeHandle({ palette, mapHeight, setMapHeight }: {
-  palette: { gray: string; textMuted: string }; mapHeight: number; setMapHeight: (h: number) => void
-}): JSX.Element {
-  return (
-    <div className="w-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-ns-resize py-1"
-      onPointerDown={(e) => {
-        e.preventDefault()
-        const startY = e.clientY, startHeight = mapHeight
-        const onMove = (me: PointerEvent): void => { setMapHeight(Math.max(300, Math.min(startHeight + me.clientY - startY, 1200))) }
-        const onUp = (): void => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
-        window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp)
-      }}>
-      <div className="h-1.5 w-16 rounded-full flex items-center justify-center" style={{ backgroundColor: `${palette.gray}80` }}>
-        <GripHorizontal size={10} style={{ color: palette.textMuted }} />
-      </div>
-    </div>
-  )
-}

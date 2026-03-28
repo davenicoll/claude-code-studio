@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Activity, Zap, CheckCircle, AlertCircle, Clock, TerminalSquare, Filter, Terminal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/useAppStore'
@@ -40,6 +41,7 @@ const stripAnsi = (str: string): string =>
     .trim()
 
 export function ActivityStream({ className, onAgentClick }: { className?: string; onAgentClick?: (id: string) => void }): JSX.Element {
+  const { t } = useTranslation()
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [autoScroll, setAutoScroll] = useState(true)
   const [filterType, setFilterType] = useState<ActivityEvent['type'] | 'all'>('all')
@@ -213,7 +215,7 @@ export function ActivityStream({ className, onAgentClick }: { className?: string
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
         <Activity size={14} className="text-primary animate-pulse" />
-        <span className="text-xs font-medium">Activity Stream</span>
+        <span className="text-xs font-medium">{t('teamMgmt.activityStream')}</span>
         <span className="text-[10px] text-muted-foreground ml-auto">
           {filteredEvents.length}/{events.length}
         </span>
@@ -266,7 +268,7 @@ export function ActivityStream({ className, onAgentClick }: { className?: string
         {filteredEvents.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40">
             <Activity size={24} className="mb-2" />
-            <span className="text-xs">Waiting for agent activity...</span>
+            <span className="text-xs">{t('activityStream.waiting', 'Waiting for agent activity...')}</span>
           </div>
         ) : (
           <div className="p-1">

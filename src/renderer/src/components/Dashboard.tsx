@@ -74,7 +74,7 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-3 lg:grid-cols-5 gap-2">
         <div className="bg-secondary rounded-lg p-3 flex items-center gap-3">
           <Users size={20} className="text-green-600 dark:text-green-500" />
           <div>
@@ -137,7 +137,7 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
       </div>
 
       {/* Active View */}
-      <div className="flex-1 min-h-[120px]">
+      <div className="flex-1 min-h-0">
         {dashboardActiveView === 'activityMap' && (
           <div className="flex gap-2 h-full">
             {/* Activity Stream — left sidebar */}
@@ -145,7 +145,7 @@ export function Dashboard({ onOpenScanner, fullHeight }: DashboardProps): JSX.El
               <ActivityStream className="h-full" onAgentClick={handleAgentClick} />
             </div>
             {/* Activity Map — main area */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 h-full">
               <ActivityMap teams={teams} onAgentClick={handleAgentClick} />
             </div>
           </div>

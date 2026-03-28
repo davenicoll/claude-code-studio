@@ -21,7 +21,6 @@ interface ActivityMapGridProps {
   svgRef: React.RefObject<SVGSVGElement | null>
   scale: number
   pan: { x: number; y: number }
-  mapHeight: number
   centerX: number
   centerY: number
   // Pointer handlers
@@ -57,7 +56,6 @@ export function ActivityMapGrid({
   svgRef,
   scale,
   pan,
-  mapHeight,
   centerX,
   centerY,
   onPointerDown,
@@ -83,11 +81,10 @@ export function ActivityMapGrid({
 }: ActivityMapGridProps) {
   return (
     <div
-      className="w-full rounded-md border shadow-xl overflow-hidden select-none cursor-grab active:cursor-grabbing relative"
+      className="w-full h-full rounded-md border shadow-xl overflow-hidden select-none cursor-grab active:cursor-grabbing relative"
       style={{
         backgroundColor: palette.bg,
-        borderColor: palette.panelBorder,
-        height: `${mapHeight}px`
+        borderColor: palette.panelBorder
       }}
     >
       {/* Subtle grid */}
@@ -214,7 +211,7 @@ export function ActivityMapGrid({
 
         {/* Footer info fixed to canvas bottom */}
         <text x={centerX} y={SVG_HEIGHT - 15} textAnchor="middle" className="font-mono text-[7px] uppercase tracking-[0.4em]" fill={palette.accent} opacity={0.5} style={{ userSelect: 'none' }}>
-          CLAUDE-AGENTDECK :: TACTICAL OVERVIEW
+          CLAUDE CODE STUDIO :: ACTIVITY MAP
         </text>
       </svg>
 

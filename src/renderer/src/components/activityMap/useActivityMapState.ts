@@ -37,7 +37,6 @@ export function useActivityMapState(teams: Team[]) {
   // Pan, Zoom and Field Size States
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [mapHeight, setMapHeight] = useState(500)
   const svgRef = useRef<SVGSVGElement>(null)
 
   // Cockpit view state
@@ -276,8 +275,6 @@ export function useActivityMapState(teams: Team[]) {
     scale,
     pan,
     setPan,
-    mapHeight,
-    setMapHeight,
     svgRef,
     handlePointerDown,
     handlePointerMove,
