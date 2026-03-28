@@ -2,6 +2,17 @@
 
 All notable changes to Claude Code Studio will be documented in this file.
 
+## [0.8.4] - 2026-03-28
+
+### Fixed
+- **SSH+tmux session reconnection** — Reconnecting after SSH disconnect (sleep, network drop) now properly resumes sessions. Detects whether claude is alive in tmux via `pane_current_command`; if dead, restarts with `claude --continue` to preserve conversation context
+- **TitleBar overlay padding** — Platform-aware padding: `pr-[140px]` on Windows (right-side controls), `pl-[80px]` on macOS (left-side traffic lights), none on Linux. Fixed P0 bug where `getPlatform()` was called as async (`.then()` on sync string) causing padding to never apply
+- **Linux repaint logic** — Restored `webContents.invalidate()` for compositor-level repaint on tiling WMs; guarded renderer-side CSS repaint hack to Linux only, avoiding unnecessary reflows on Windows/macOS
+- **README clone URL** — Fixed Russian section pointing to wrong repository
+
+### Changed
+- tmux `new-session` now auto-starts claude CLI (previously only started in non-tmux fallback)
+
 ## [0.8.3] - 2026-03-27
 
 ### Security
