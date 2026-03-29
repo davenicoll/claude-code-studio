@@ -40,7 +40,7 @@ function MainLayout({ showRightPane, onOpenScanner, sidebarRef }: MainLayoutProp
   const toggleSidebar = useCallback(() => {
     const panel = sidebarRef.current
     if (!panel) return
-    if (panel.isCollapsed) {
+    if (panel.isCollapsed()) {
       panel.expand()
     } else {
       panel.collapse()
@@ -235,7 +235,7 @@ export function App(): JSX.Element {
         e.preventDefault()
         const panel = sidebarRef.current
         if (panel) {
-          if (panel.isCollapsed) panel.expand()
+          if (panel.isCollapsed()) panel.expand()
           else panel.collapse()
         }
       }
