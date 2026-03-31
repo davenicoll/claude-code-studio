@@ -2,6 +2,33 @@
 
 All notable changes to Claude Code Studio will be documented in this file.
 
+## [v0.9.2] - 2026-03-31
+
+### Security
+- Plugin env filter hardening — `extraEnvVars` now filtered through denylist before merging, preventing bypass via spread override
+- Removed `$` anchor from `api.?key` sensitive pattern to catch `API_KEY_FILE`, `API_KEY_PATH` variants
+- Windows command path validation — platform-aware allowed paths with normalized separators
+- macOS command path validation — `/usr/local/bin`, `/opt/homebrew/bin`, `~/Library/Application Support/` support
+
+### Added
+- **PTY session auto-recovery** — sessions automatically retry up to 3 times with exponential backoff (2s→4s→8s) after unexpected exit (WiFi drops, network errors)
+- **Session resume via `--resume`** — existing `claudeSessionId` now uses `claude --resume` instead of `--session-id`, restoring full conversation history on reconnection
+- `PluginPermissions` wired into `PluginManifest` type for future per-plugin configuration
+
+### Fixed
+- Sidebar collapse state moved to Zustand store (was local state, lost on re-render)
+- `panel.isCollapsed` → `panel.isCollapsed()` API fix for react-resizable-panels
+- Xterm keyboard shortcuts (Ctrl+B/D/N/K/L/W) now propagate to app instead of being consumed by PTY
+- `realpathSync` catch block now distinguishes ENOENT from EACCES and other errors
+
+### Tests
+- 28 new tests — PTY session recovery (14), env filter edge cases (14), total 41
+- vitest + mocked node-pty/electron integration test infrastructure
+
+### Documentation
+- CHANGELOG v0.9.1 cleaned up (removed 5 duplicate entries from earlier versions)
+- Explanatory comment for orphaned DA response regex in utils.ts
+
 ## [v0.9.1] - 2026-03-29
 
 ### Security
