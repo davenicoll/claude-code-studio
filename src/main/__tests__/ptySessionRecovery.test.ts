@@ -397,7 +397,8 @@ describe('PtySessionManager — session recovery logic', () => {
       }
 
       // Now if it exits again, it should start recovery from count 0
-      ;(pty.spawn as Mock).mockClear()
+      const spawnMock = pty.spawn as Mock
+      spawnMock.mockClear()
       ptyOnExitHandler!({ exitCode: 1 })
 
       // Should recover again (delay = 2000ms for attempt 1, not 4000ms)
