@@ -104,6 +104,18 @@ export class PtySessionManager {
       } catch { /* skip corrupted */ }
     }
 
+    // Global MCP from ~/.claude.json (root-level mcpServers)
+    const claudeJsonPath = path.join(homedir(), '.claude.json')
+    if (existsSync(claudeJsonPath)) {
+      try {
+        const raw = JSON.parse(readFileSync(claudeJsonPath, 'utf-8'))
+        const servers = raw.mcpServers ?? {}
+        for (const [name, config] of Object.entries(servers)) {
+          if (allowed.has(name) && !merged[name]) merged[name] = config
+        }
+      } catch { /* skip corrupted */ }
+    }
+
     // Project MCP from .mcp.json
     const projectMcpPath = path.join(agent.projectPath, '.mcp.json')
     if (existsSync(projectMcpPath)) {

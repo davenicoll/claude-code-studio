@@ -14,19 +14,40 @@ export function registerConfigHandlers(deps: ConfigHandlerDeps): void {
   ipcMain.handle('config:getMcp', async (_event, scope: string, projectPath?: string) => {
     const { existsSync, readFileSync } = await import('fs')
     const { homedir } = await import('os')
-    let configPath: string
+    const home = homedir()
+    const merged: Record<string, unknown> = {}
+
     if (scope === 'project' && projectPath) {
-      configPath = join(projectPath, '.mcp.json')
+      const configPath = join(projectPath, '.mcp.json')
+      if (existsSync(configPath)) {
+        try {
+          const raw = JSON.parse(readFileSync(configPath, 'utf-8'))
+          Object.assign(merged, raw.mcpServers ?? {})
+        } catch { /* skip corrupted */ }
+      }
     } else {
-      configPath = join(homedir(), '.claude', 'settings.json')
+      // Read from ~/.claude/settings.json
+      const settingsPath = join(home, '.claude', 'settings.json')
+      if (existsSync(settingsPath)) {
+        try {
+          const raw = JSON.parse(readFileSync(settingsPath, 'utf-8'))
+          Object.assign(merged, raw.mcpServers ?? {})
+        } catch { /* skip corrupted */ }
+      }
+      // Also read from ~/.claude.json (root-level mcpServers)
+      const claudeJsonPath = join(home, '.claude.json')
+      if (existsSync(claudeJsonPath)) {
+        try {
+          const raw = JSON.parse(readFileSync(claudeJsonPath, 'utf-8'))
+          const servers = raw.mcpServers ?? {}
+          for (const [name, config] of Object.entries(servers)) {
+            if (!merged[name]) merged[name] = config
+          }
+        } catch { /* skip corrupted */ }
+      }
     }
-    if (!existsSync(configPath)) return { mcpServers: {} }
-    try {
-      const raw = JSON.parse(readFileSync(configPath, 'utf-8'))
-      return { mcpServers: raw.mcpServers ?? {} }
-    } catch {
-      return { mcpServers: {} }
-    }
+
+    return { mcpServers: merged }
   })
 
   ipcMain.handle('config:updateMcp', async (_event, scope: string, config: { mcpServers: Record<string, unknown> }, projectPath?: string) => {
