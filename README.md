@@ -304,3 +304,7 @@ npm run dev
 ## Лицензия
 
 MIT - wat-hiroaki
+
+---
+
+If you find this useful, a :star: on GitHub helps others discover it!
