@@ -131,15 +131,9 @@ export function XtermTerminal({ agentId, theme = 'dark', fontSize = 13 }: XtermT
         if (sel) navigator.clipboard.writeText(sel)
         return false
       }
-      // Ctrl+V → paste from clipboard with bracketed paste
+      // Ctrl+V → let xterm handle paste natively (via onData)
       if (e.ctrlKey && e.key === 'v') {
-        navigator.clipboard.readText().then((text) => {
-          if (text) {
-            const pasted = `\x1b[200~${text}\x1b[201~`
-            window.api.ptyWrite(agentId, pasted)
-          }
-        })
-        return false
+        return true
       }
       // Ctrl+Shift+K → clear terminal scrollback
       if (e.ctrlKey && e.shiftKey && e.key === 'K') {

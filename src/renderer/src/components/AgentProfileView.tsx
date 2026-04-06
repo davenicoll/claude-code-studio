@@ -81,6 +81,52 @@ function SkillItem({ skill }: { skill: ClaudeSkillEntry }): JSX.Element {
   )
 }
 
+export { SectionHeader, RuleItem, SkillItem }
+
+export function useAgentProfile(agentId: string | undefined): {
+  profile: AgentProfileData | null
+  loading: boolean
+  error: string | null
+  expanded: Record<string, boolean>
+  toggleSection: (key: string) => void
+  viewingFile: { path: string; content: string } | null
+  setViewingFile: (file: { path: string; content: string } | null) => void
+  handleViewFile: (filePath: string) => Promise<void>
+} {
+  const [profile, setProfile] = useState<AgentProfileData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({
+    rules: false, memory: false, skills: false, mcp: false, hooks: false
+  })
+  const [viewingFile, setViewingFile] = useState<{ path: string; content: string } | null>(null)
+
+  useEffect(() => {
+    if (!agentId) return
+    setLoading(true)
+    setError(null)
+    window.api.getAgentProfile(agentId)
+      .then(setProfile)
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setLoading(false))
+  }, [agentId])
+
+  const toggleSection = useCallback((key: string) => {
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }))
+  }, [])
+
+  const handleViewFile = useCallback(async (filePath: string) => {
+    try {
+      const content = await window.api.readConfigFile(filePath)
+      setViewingFile({ path: filePath, content })
+    } catch {
+      // Silently fail
+    }
+  }, [])
+
+  return { profile, loading, error, expanded, toggleSection, viewingFile, setViewingFile, handleViewFile }
+}
+
 export function AgentProfileView({ agentId, agentName, onClose }: AgentProfileViewProps): JSX.Element {
   const { t } = useTranslation()
   const [profile, setProfile] = useState<AgentProfileData | null>(null)
