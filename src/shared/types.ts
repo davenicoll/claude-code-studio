@@ -10,6 +10,11 @@ export type AgentStatus =
   | 'archived'
 
 
+export interface McpServerFilter {
+  enabled: boolean
+  allowedServers: string[]
+}
+
 export interface Agent {
   id: string
   name: string
@@ -29,6 +34,7 @@ export interface Agent {
   reportTo: string | null
   parentAgentId: string | null
   isTemporary: boolean
+  mcpServerFilter?: McpServerFilter
   createdAt: string
   updatedAt: string
 }
@@ -185,6 +191,7 @@ export interface CreateAgentParams {
   teamId?: string
   reportTo?: string
   workspaceId?: string
+  mcpServerFilter?: McpServerFilter
 }
 
 export interface TeamStats {

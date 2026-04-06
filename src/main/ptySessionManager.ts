@@ -1,7 +1,8 @@
 import * as pty from 'node-pty'
 import { execFile, execFileSync } from 'child_process'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import path from 'path'
+import { homedir } from 'os'
 import { v4 as uuidv4 } from 'uuid'
 import type { Agent, AgentStatus } from '@shared/types'
 import type { Database } from './database'
@@ -80,6 +81,44 @@ export class PtySessionManager {
     return 'claude'
   }
 
+  /**
+   * Build a filtered MCP config JSON for --mcp-config based on agent's allowedServers.
+   * Reads raw MCP server configs from settings.json and .mcp.json, keeps only allowed ones.
+   */
+  private buildFilteredMcpConfig(agent: Agent): Record<string, unknown> | null {
+    const filter = agent.mcpServerFilter
+    if (!filter?.enabled || filter.allowedServers.length === 0) return null
+
+    const allowed = new Set(filter.allowedServers)
+    const merged: Record<string, unknown> = {}
+
+    // Global MCP from ~/.claude/settings.json
+    const settingsPath = path.join(homedir(), '.claude', 'settings.json')
+    if (existsSync(settingsPath)) {
+      try {
+        const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'))
+        const servers = settings.mcpServers ?? {}
+        for (const [name, config] of Object.entries(servers)) {
+          if (allowed.has(name)) merged[name] = config
+        }
+      } catch { /* skip corrupted */ }
+    }
+
+    // Project MCP from .mcp.json
+    const projectMcpPath = path.join(agent.projectPath, '.mcp.json')
+    if (existsSync(projectMcpPath)) {
+      try {
+        const raw = JSON.parse(readFileSync(projectMcpPath, 'utf-8'))
+        const servers = raw.mcpServers ?? {}
+        for (const [name, config] of Object.entries(servers)) {
+          if (allowed.has(name) && !merged[name]) merged[name] = config
+        }
+      } catch { /* skip corrupted */ }
+    }
+
+    return Object.keys(merged).length > 0 ? merged : null
+  }
+
   /** Maximum number of automatic recovery attempts after unexpected exit */
   private static readonly MAX_AUTO_RECOVERY = 3
 
@@ -107,6 +146,14 @@ export class PtySessionManager {
 
     if (agent.systemPrompt) {
       args.push('--system-prompt', agent.systemPrompt)
+    }
+
+    // Per-agent MCP server filter
+    if (agent.mcpServerFilter?.enabled) {
+      const mcpConfig = this.buildFilteredMcpConfig(agent)
+      if (mcpConfig) {
+        args.push('--mcp-config', JSON.stringify(mcpConfig), '--strict-mcp-config')
+      }
     }
 
     // On Windows, node-pty needs the shell for .cmd files

@@ -215,6 +215,12 @@
     "created": "Created",
     "updated": "Updated"
   },
+  "mcp": {
+    "filterLabel": "Filter MCP Servers",
+    "noServers": "No MCP servers found",
+    "filterActive": "Allowlist active ({{count}} servers)",
+    "filtered": "filtered"
+  },
   "activity": {
     "title": "Activity Log",
     "empty": "No activity yet. Events will appear here as agents work.",

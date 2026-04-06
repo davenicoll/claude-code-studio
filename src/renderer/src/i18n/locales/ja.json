@@ -215,6 +215,12 @@
     "created": "作成日時",
     "updated": "更新日時"
   },
+  "mcp": {
+    "filterLabel": "MCP サーバーをフィルタ",
+    "noServers": "MCP サーバーが見つかりません",
+    "filterActive": "許可リスト有効 ({{count}} サーバー)",
+    "filtered": "除外"
+  },
   "activity": {
     "title": "アクティビティログ",
     "empty": "アクティビティはまだありません。エージェントが稼働すると表示されます。",

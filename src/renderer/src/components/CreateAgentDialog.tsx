@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@stores/useAppStore'
-import { X, FolderOpen, Server, Upload, ChevronDown, ChevronRight } from 'lucide-react'
+import { X, FolderOpen, Server, Upload, ChevronDown, ChevronRight, Plug } from 'lucide-react'
 import { showToast } from '@components/ToastContainer'
 import { useOverlayClose } from '@lib/useOverlayClose'
-import type { DiscoveredWorkspace, Workspace } from '@shared/types'
+import type { DiscoveredWorkspace, Workspace, McpServerFilter } from '@shared/types'
 
 interface CreateAgentDialogProps {
   onClose: () => void
@@ -27,6 +27,9 @@ export function CreateAgentDialog({ onClose, prefill, workspaceId: workspaceIdPr
   const [error, setError] = useState<string | null>(null)
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [mcpFilterEnabled, setMcpFilterEnabled] = useState(false)
+  const [mcpAllServers, setMcpAllServers] = useState<string[]>([])
+  const [mcpAllowedServers, setMcpAllowedServers] = useState<Set<string>>(new Set())
   const [pathSuggestions, setPathSuggestions] = useState<{ name: string; path: string }[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedSuggestion, setSelectedSuggestion] = useState(-1)
@@ -64,6 +67,32 @@ export function CreateAgentDialog({ onClose, prefill, workspaceId: workspaceIdPr
       }
     })
   }, [prefill, workspaceIdProp])
+
+  // Load available MCP servers when filter is enabled
+  useEffect(() => {
+    if (!mcpFilterEnabled) return
+    let cancelled = false
+    const loadServers = async (): Promise<void> => {
+      const globalCfg = await window.api.getMcpConfig('global')
+      const globalNames = Object.keys(globalCfg.mcpServers)
+      let projectNames: string[] = []
+      if (projectPath.trim()) {
+        try {
+          const projectCfg = await window.api.getMcpConfig('project', projectPath.trim())
+          projectNames = Object.keys(projectCfg.mcpServers)
+        } catch { /* no project config */ }
+      }
+      if (cancelled) return
+      const allNames = [...new Set([...globalNames, ...projectNames])]
+      setMcpAllServers(allNames)
+      // On first load, select all servers by default
+      if (mcpAllowedServers.size === 0 && allNames.length > 0) {
+        setMcpAllowedServers(new Set(allNames))
+      }
+    }
+    loadServers()
+    return () => { cancelled = true }
+  }, [mcpFilterEnabled, projectPath])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
@@ -181,6 +210,9 @@ export function CreateAgentDialog({ onClose, prefill, workspaceId: workspaceIdPr
     try {
       const skills = skillsInput.split(',').map((s) => s.trim()).filter(Boolean)
       const resolvedWsId = workspaceIdProp || useAppStore.getState().activeWorkspaceId || undefined
+      const mcpServerFilter: McpServerFilter | undefined = mcpFilterEnabled
+        ? { enabled: true, allowedServers: [...mcpAllowedServers] }
+        : undefined
       const agent = await window.api.createAgent({
         name: name.trim(),
         projectPath: projectPath.trim(),
@@ -189,7 +221,8 @@ export function CreateAgentDialog({ onClose, prefill, workspaceId: workspaceIdPr
         systemPrompt: systemPrompt.trim() || undefined,
         skills: skills.length > 0 ? skills : undefined,
         reportTo: reportTo || undefined,
-        workspaceId: resolvedWsId
+        workspaceId: resolvedWsId,
+        mcpServerFilter
       })
       addAgent(agent)
       setSelectedAgent(agent.id)
@@ -379,6 +412,46 @@ export function CreateAgentDialog({ onClose, prefill, workspaceId: workspaceIdPr
                   rows={3}
                   className="w-full mt-1 px-3 py-2 bg-secondary rounded-lg text-sm outline-none resize-none"
                 />
+              </div>
+
+              {/* MCP Server Filter */}
+              <div>
+                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={mcpFilterEnabled}
+                    onChange={(e) => setMcpFilterEnabled(e.target.checked)}
+                    className="rounded"
+                  />
+                  <Plug size={12} />
+                  {t('mcp.filterLabel', 'Filter MCP Servers')}
+                </label>
+                {mcpFilterEnabled && (
+                  <div className="mt-2 space-y-1 max-h-[160px] overflow-y-auto">
+                    {mcpAllServers.length === 0 ? (
+                      <p className="text-xs text-muted-foreground px-1">
+                        {t('mcp.noServers', 'No MCP servers found')}
+                      </p>
+                    ) : (
+                      mcpAllServers.map((name) => (
+                        <label key={name} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent/50 cursor-pointer text-xs">
+                          <input
+                            type="checkbox"
+                            checked={mcpAllowedServers.has(name)}
+                            onChange={(e) => {
+                              const next = new Set(mcpAllowedServers)
+                              if (e.target.checked) next.add(name)
+                              else next.delete(name)
+                              setMcpAllowedServers(next)
+                            }}
+                            className="rounded"
+                          />
+                          <span className="font-mono">{name}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -31,6 +31,7 @@ export function createAgent(db: DatabaseInternals, params: CreateAgentParams): A
     reportTo: params.reportTo ?? null,
     parentAgentId: null,
     isTemporary: false,
+    mcpServerFilter: params.mcpServerFilter,
     createdAt: now,
     updatedAt: now
   }
@@ -58,7 +59,7 @@ export function updateAgent(db: DatabaseInternals, id: string, updates: Record<s
   const agent = db._data.agents.find((a) => a.id === id)
   if (!agent) throw new Error(`Agent ${id} not found`)
 
-  const allowedFields = ['name', 'icon', 'roleLabel', 'status', 'currentTask', 'systemPrompt', 'claudeSessionId', 'isPinned', 'skills', 'teamId', 'reportTo']
+  const allowedFields = ['name', 'icon', 'roleLabel', 'status', 'currentTask', 'systemPrompt', 'claudeSessionId', 'isPinned', 'skills', 'teamId', 'reportTo', 'mcpServerFilter']
   for (const [key, value] of Object.entries(updates)) {
     if (allowedFields.includes(key)) {
       (agent as unknown as Record<string, unknown>)[key] = value

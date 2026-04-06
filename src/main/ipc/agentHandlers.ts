@@ -59,7 +59,8 @@ export function registerAgentHandlers(deps: AgentHandlerDeps): void {
     const ALLOWED_AGENT_KEYS = new Set([
       'name', 'icon', 'roleLabel', 'workspaceId', 'projectPath', 'projectName',
       'sessionNumber', 'status', 'currentTask', 'systemPrompt', 'claudeSessionId',
-      'isPinned', 'skills', 'teamId', 'reportTo', 'parentAgentId', 'isTemporary'
+      'isPinned', 'skills', 'teamId', 'reportTo', 'parentAgentId', 'isTemporary',
+      'mcpServerFilter'
     ])
     const sanitized: Record<string, unknown> = {}
     for (const key of Object.keys(updates)) {
