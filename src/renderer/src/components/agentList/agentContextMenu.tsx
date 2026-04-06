@@ -114,7 +114,8 @@ export function AgentContextMenu({ contextMenu, onClose, workspaces }: AgentCont
         systemPrompt: agent.systemPrompt ?? undefined,
         skills: agent.skills.length > 0 ? agent.skills : undefined,
         reportTo: agent.reportTo ?? undefined,
-        workspaceId: agent.workspaceId ?? undefined
+        workspaceId: agent.workspaceId ?? undefined,
+        mcpServerFilter: agent.mcpServerFilter
       })
       useAppStore.getState().addAgent(newAgent)
       setSelectedAgent(newAgent.id)

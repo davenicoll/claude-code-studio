@@ -148,8 +148,11 @@ export class PtySessionManager {
       this.sessions.delete(agent.id)
     }
 
-    const sessionId = agent.claudeSessionId || uuidv4()
-    const isResume = !!agent.claudeSessionId
+    // MCP filter agents always start fresh sessions because --strict-mcp-config
+    // is incompatible with --resume in interactive mode
+    const hasMcpFilter = agent.mcpServerFilter?.enabled
+    const sessionId = hasMcpFilter ? uuidv4() : (agent.claudeSessionId || uuidv4())
+    const isResume = !hasMcpFilter && !!agent.claudeSessionId
 
     // Interactive mode — use --resume for existing sessions to restore conversation
     const args: string[] = isResume
@@ -161,10 +164,10 @@ export class PtySessionManager {
     }
 
     // Per-agent MCP server filter
-    if (agent.mcpServerFilter?.enabled) {
+    if (hasMcpFilter) {
       const mcpConfig = this.buildFilteredMcpConfig(agent)
       if (mcpConfig) {
-        args.push('--mcp-config', JSON.stringify(mcpConfig), '--strict-mcp-config')
+        args.push('--mcp-config', JSON.stringify({ mcpServers: mcpConfig }), '--strict-mcp-config')
       }
     }
 
