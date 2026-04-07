@@ -4,8 +4,10 @@ import { useAppStore } from '@stores/useAppStore'
 import { SettingsModal } from '@components/SettingsModal'
 import {
   LayoutDashboard,
-  PanelLeft,
-  PanelRight,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
   Settings,
   RotateCcw,
   Columns2,
@@ -18,7 +20,7 @@ const platform = window.api.getPlatform()
 
 export function TitleBar(): JSX.Element {
   const { t } = useTranslation()
-  const { toggleDashboard, toggleRightPane, toggleSidebar, showDashboard, resetLayout, layoutTree, teamStats, selectedAgentId, splitPane } = useAppStore()
+  const { toggleDashboard, toggleRightPane, toggleSidebar, showDashboard, showRightPane, sidebarCollapsed, resetLayout, layoutTree, teamStats, selectedAgentId, splitPane } = useAppStore()
   const [showSettings, setShowSettings] = useState(false)
   const leafCount = countLeaves(layoutTree)
 
@@ -80,7 +82,7 @@ export function TitleBar(): JSX.Element {
               className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
               title={t('titleBar.toggleSidebar', 'Toggle Sidebar')}
             >
-              <PanelLeft size={16} />
+              {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             </button>
           )}
           {/* Pane count indicator + reset */}
@@ -121,7 +123,7 @@ export function TitleBar(): JSX.Element {
             className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
             title={t('titleBar.toggleContextPane', 'Toggle Context Pane')}
           >
-            <PanelRight size={16} />
+            {showRightPane ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
           </button>
           <button
             onClick={() => setShowSettings(true)}
