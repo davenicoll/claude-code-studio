@@ -59,8 +59,21 @@ export function TitleBar(): JSX.Element {
         platform === 'win32' && 'pr-[140px]',
         platform === 'darwin' && 'pl-[80px]'
       )}>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-primary" />
+        {/* Left section: sidebar toggle + app title */}
+        <div className="flex items-center gap-1">
+          {toggleSidebar && (
+            <button
+              onClick={toggleSidebar}
+              className={cn(
+                'titlebar-no-drag p-1.5 rounded hover:bg-accent transition-colors',
+                sidebarCollapsed ? 'text-muted-foreground' : 'text-foreground'
+              )}
+              title={t('titleBar.toggleSidebar', 'Toggle Sidebar (Ctrl+B)')}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
+          )}
+          <div className="w-3 h-3 rounded-full bg-primary ml-1" />
           <span className="text-sm font-semibold">{t('app.title')}</span>
           {teamStats.total > 0 && (
             <div className="flex items-center gap-1.5 ml-2 text-[10px]">
@@ -75,21 +88,13 @@ export function TitleBar(): JSX.Element {
           )}
         </div>
 
+        {/* Center: layout controls */}
         <div className="flex items-center gap-1">
-          {toggleSidebar && (
-            <button
-              onClick={toggleSidebar}
-              className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
-              title={t('titleBar.toggleSidebar', 'Toggle Sidebar')}
-            >
-              {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-            </button>
-          )}
           {/* Pane count indicator + reset */}
           {leafCount > 1 && (
             <button
               onClick={resetLayout}
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors mr-1"
+              className="titlebar-no-drag flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors mr-1"
               title={t('titleBar.resetLayout', 'Reset layout')}
             >
               <RotateCcw size={10} />
@@ -99,35 +104,45 @@ export function TitleBar(): JSX.Element {
 
           <button
             onClick={() => handleSplitPane('horizontal')}
-            className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
+            className="titlebar-no-drag p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
             title={t('titleBar.splitHorizontal', 'Split Right')}
           >
             <Columns2 size={16} />
           </button>
           <button
             onClick={() => handleSplitPane('vertical')}
-            className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
+            className="titlebar-no-drag p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
             title={t('titleBar.splitVertical', 'Split Down')}
           >
             <Rows2 size={16} />
           </button>
           <button
             onClick={toggleDashboard}
-            className={`p-1.5 rounded hover:bg-accent transition-colors ${showDashboard ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
+            className={cn(
+              'titlebar-no-drag p-1.5 rounded hover:bg-accent transition-colors',
+              showDashboard ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+            )}
             title={t('dashboard.title')}
           >
             <LayoutDashboard size={16} />
           </button>
+        </div>
+
+        {/* Right section: context pane toggle + settings */}
+        <div className="flex items-center gap-1">
           <button
             onClick={toggleRightPane}
-            className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
-            title={t('titleBar.toggleContextPane', 'Toggle Context Pane')}
+            className={cn(
+              'titlebar-no-drag p-1.5 rounded hover:bg-accent transition-colors',
+              showRightPane ? 'text-foreground' : 'text-muted-foreground'
+            )}
+            title={t('titleBar.toggleContextPane', 'Toggle Context Pane (Ctrl+Shift+P)')}
           >
             {showRightPane ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
           </button>
           <button
             onClick={() => setShowSettings(true)}
-            className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
+            className="titlebar-no-drag p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
             title={t('settings.title')}
           >
             <Settings size={16} />
