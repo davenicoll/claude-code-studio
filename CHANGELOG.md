@@ -2,6 +2,11 @@
 
 All notable changes to Claude Code Studio will be documented in this file.
 
+## [v0.10.3] - 2026-04-09
+
+### Added
+- **Agent name editing** — right-click context menu now includes an inline editable field for agent name (backend already supported it, UI was missing)
+
 ## [v0.9.2] - 2026-03-31
 
 ### Security
