@@ -146,6 +146,21 @@ export function AgentContextMenu({ contextMenu, onClose, workspaces }: AgentCont
       {/* Agent details header -- editable fields */}
       <div className="px-3 py-2 border-b border-border/50 space-y-1.5">
         <div className="text-[10px] text-muted-foreground">
+          <span className="font-medium">{t('agent.name', 'Agent Name')}:</span>
+          <input
+            className="ml-1 bg-background border border-border/50 rounded px-1 py-0 text-[10px] font-mono w-full mt-0.5 outline-none focus:border-primary"
+            defaultValue={ctxAgent.name}
+            onBlur={async (e) => {
+              const val = e.target.value.trim()
+              if (val && val !== ctxAgent.name) {
+                await window.api.updateAgent(ctxAgent.id, { name: val })
+                useAppStore.getState().updateAgentInList(ctxAgent.id, { name: val })
+              }
+            }}
+            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+          />
+        </div>
+        <div className="text-[10px] text-muted-foreground">
           <span className="font-medium">{t('agent.project', 'Project')}:</span>
           <input
             className="ml-1 bg-background border border-border/50 rounded px-1 py-0 text-[10px] font-mono w-full mt-0.5 outline-none focus:border-primary"
