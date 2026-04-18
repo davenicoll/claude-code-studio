@@ -126,9 +126,11 @@ export function registerSystemHandlers(deps: SystemHandlerDeps): void {
 
   // Titlebar theme
   ipcMain.handle('app:titlebar-theme', (_event, isDark: boolean) => {
-    if (process.platform === 'linux') return // No titlebar overlay on Linux
+    // setTitleBarOverlay is Windows-only; macOS uses native traffic lights,
+    // Linux has no overlay support
+    if (process.platform !== 'win32') return
     const mainWindow = getMainWindow()
-    if (!mainWindow) return
+    if (typeof mainWindow?.setTitleBarOverlay !== 'function') return
     mainWindow.setTitleBarOverlay({
       color: isDark ? '#09090b' : '#ffffff',
       symbolColor: isDark ? '#e0e0e0' : '#333333'
