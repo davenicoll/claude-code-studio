@@ -549,6 +549,14 @@ export class PtySessionManager {
       return
     }
 
+    // Stale --resume target: stored session id no longer exists on disk.
+    // Reuse the session_conflict recovery path to restart with a fresh id.
+    if (/No conversation found with session ID/i.test(recentClean)) {
+      this.setStatus(session, 'session_conflict')
+      console.warn(`[PtySession] Stale session id for ${session.agentId}; will restart with a fresh id.`)
+      return
+    }
+
     // Tool execution patterns (Read, Write, Search, Bash, etc.)
     if (/(?:Read|Write|Edit|Search|Bash|MultiTool|ListDir|Grep)\(/.test(recentClean) ||
         /\btool uses\b/i.test(recentClean) ||
