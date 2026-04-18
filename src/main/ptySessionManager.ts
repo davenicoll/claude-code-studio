@@ -70,14 +70,40 @@ export class PtySessionManager {
       } catch {
         /* not found */
       }
-    } else {
-      try {
-        const result = execFileSync('which', ['claude'], { encoding: 'utf-8' }).trim()
-        if (result && existsSync(result)) return result
-      } catch {
-        /* not found */
-      }
+      return 'claude'
     }
+
+    // POSIX: try `which` against the current PATH first
+    try {
+      const result = execFileSync('which', ['claude'], { encoding: 'utf-8' }).trim()
+      if (result && existsSync(result)) return result
+    } catch {
+      /* not found in current PATH */
+    }
+
+    // Check well-known install locations — Electron launched from Finder
+    // inherits a minimal PATH that misses most user-level install dirs
+    const home = homedir()
+    const candidates = [
+      path.join(home, '.local', 'bin', 'claude'),
+      path.join(home, '.claude', 'local', 'claude'),
+      path.join(home, '.npm-global', 'bin', 'claude'),
+      '/opt/homebrew/bin/claude',
+      '/usr/local/bin/claude'
+    ]
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) return candidate
+    }
+
+    // Last resort: ask the user's login shell for PATH
+    try {
+      const shell = process.env.SHELL || '/bin/zsh'
+      const result = execFileSync(shell, ['-l', '-c', 'command -v claude'], { encoding: 'utf-8' }).trim()
+      if (result && existsSync(result)) return result
+    } catch {
+      /* not found via login shell */
+    }
+
     return 'claude'
   }
 
@@ -176,13 +202,25 @@ export class PtySessionManager {
     const shellArgs =
       process.platform === 'win32' ? ['/c', this.claudePath, ...args] : args
 
-    const ptyProcess = pty.spawn(shell, shellArgs, {
-      name: 'xterm-256color',
-      cols,
-      rows,
-      cwd: agent.projectPath,
-      env: { ...process.env } as Record<string, string>
-    })
+    if (process.platform !== 'win32' && !existsSync(shell)) {
+      throw new Error(
+        `Claude CLI not found at "${shell}". Install the Claude CLI or ensure it is on PATH (tried which + common locations).`
+      )
+    }
+
+    let ptyProcess: pty.IPty
+    try {
+      ptyProcess = pty.spawn(shell, shellArgs, {
+        name: 'xterm-256color',
+        cols,
+        rows,
+        cwd: agent.projectPath,
+        env: { ...process.env } as Record<string, string>
+      })
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err)
+      throw new Error(`Failed to spawn Claude CLI at "${shell}" (cwd="${agent.projectPath}"): ${reason}`)
+    }
 
     const session: PtySession = {
       agentId: agent.id,
